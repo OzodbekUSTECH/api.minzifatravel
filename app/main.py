@@ -80,6 +80,40 @@ async def change_client_manager(client_id: int, db: Session = Depends(get_db)):
 
     return {"message": 'Менеджер у клиента поменян'}
 
+
+from sqlalchemy.exc import IntegrityError
+@app.post('/registration/any', summary="Create a new user", response_model=RegUserSchemaResponse)
+async def register(user: UserCreateSchema, db: Session = Depends(get_db)):
+
+
+    hashed_password = pwd_context.hash(user.password)
+    db_user = models.User(
+        full_name=user.full_name,
+        email=user.email,
+        department=user.department,
+        role=user.role,
+        language=user.language
+    )
+    db_user.password = hashed_password
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует.")
+
+
+    # response = RegUserSchemaResponse(
+    #     id=db_user.id,
+    #     full_name=db_user.full_name,
+    #     email=db_user.email,
+    #     department=db_user.department,
+    #     role=db_user.role,
+    #     language=db_user.language
+    # )
+    return db_user
+
+
 import uvicorn
 if __name__ == "__main__":
     uvicorn.run(app, host='0.0.0.0', port=8000)
