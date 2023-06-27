@@ -105,3 +105,11 @@ class CreateTaskSchema(BaseModel):
     date_deadline: Optional[date] = None
     importance: str
     staff_id: int
+
+from pydantic import BaseModel, Field
+class UpdateTaskSchema(BaseModel):
+    title: Optional[str] = None
+    timer_deadline: Optional[str] = None
+    date_deadline: Optional[str] = None
+    importance: Optional[str] = None
+    staff_id: Optional[int] = None

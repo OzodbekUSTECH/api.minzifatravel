@@ -7,7 +7,8 @@ from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(
     prefix='/administrator',
-    tags = ['Administrator']
+    tags = ['Administrator'],
+    dependencies=[Depends(get_current_user)]
 )
 
 
@@ -124,15 +125,53 @@ async def create_task(task: CreateTaskSchema, current_user=Depends(get_current_u
     )
     db.add(db_task)
     db.commit()
+    return db_task
 
+@router.put('/update_task/{task_id}', response_model=TaskSchema)
+async def update_task(task_id: int, updated_task: UpdateTaskSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "God":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail="Задача не найдена.")
+
+    # Обновление полей задачи, если они указаны в запросе
+    if updated_task.title is not None:
+        db_task.title = updated_task.title
+    if updated_task.timer_deadline is not None:
+        db_task.timer_deadline = updated_task.timer_deadline
+    if updated_task.date_deadline is not None:
+        db_task.date_deadline = updated_task.date_deadline
+    if updated_task.importance is not None:
+        db_task.importance = updated_task.importance
+    if updated_task.staff_id is not None:
+        db_task.staff_id = updated_task.staff_id
+
+    db.commit()
+    db.refresh(db_task)
     
     return db_task
+
+@router.delete('/delete_task')
+async def delete_task(task_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "God":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if db_task:
+        db.delete(db_task)
+        db.commit()
+        return {"message": "Задача успешно удалена."}
+    else:
+        raise HTTPException(status_code=404, detail="Задача не найдена.")
+
 
 from app.workingtime.schema import *
 #working times of managers
 @router.get("/workingtime/dates_all", name='get all dates and their staff with working time', response_model=list[WorkDateSchema])
-def get_all_users_by_dates(db: Session = Depends(get_db)):
-
+def get_all_users_by_dates(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "God":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
     users = db.query(models.WorkTime).order_by(models.WorkTime.date, models.WorkTime.staff_id).all()
 
     result = {}
@@ -158,8 +197,9 @@ def get_all_users_by_dates(db: Session = Depends(get_db)):
 
 
 @router.get("/workingtime/dates/{date}", name='get all staff with working time for a specific date', response_model=List[AllWorkTimeSchema])
-def get_all_users_by_date(date: date, db: Session = Depends(get_db)):
-
+def get_all_users_by_date(date: date, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "God":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
     users = db.query(models.WorkTime).filter(models.WorkTime.date == date).order_by(models.WorkTime.id).all()
 
     response = []
@@ -177,8 +217,9 @@ def get_all_users_by_date(date: date, db: Session = Depends(get_db)):
     return response
 
 @router.get("/workingtime/range/dates", name='get all staff with working time for a range of dates', response_model=List[AllWorkTimeSchema])
-def get_all_users_by_range(start_date: date, end_date: Optional[date] = None, db: Session = Depends(get_db)):
-
+def get_all_users_by_range(start_date: date, end_date: Optional[date] = None,current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "God":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
     query = db.query(models.WorkTime).filter(models.WorkTime.date >= start_date)
 
     if end_date:
@@ -198,3 +239,20 @@ def get_all_users_by_range(start_date: date, end_date: Optional[date] = None, db
         response.append(user_data)
 
     return response
+
+@router.put('/{client_id}/change/{manager_id}')
+async def change_manager(client_id: int, manager_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "God":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    db_client = db.query(models.Lead).filter(models.Lead.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Клиент не найден.")
+    new_manager = db.query(models.User).filter(models.User.id == manager_id).first()
+
+    db_client.manager = new_manager
+    for message in db_client.messages:
+        message.manager = new_manager
+    
+    db.commit()
+
+    return {"message": "Менеджер у клиент сменен"}
