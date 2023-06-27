@@ -26,13 +26,21 @@ app.include_router(working_time_router)
 
 
 
-def run_tgclient():
-    # Запустите клиента Pyrogram
-    tgclient.run()
-@app.on_event("startup")
-async def startup_event():
-    tgclient_process = multiprocessing.Process(target=run_tgclient)
-    tgclient_process.start()
+# def run_tgclient():
+#     # Запустите клиента Pyrogram
+#     tgclient.run()
+# @app.on_event("startup")
+# async def startup_event():
+#     fastapi_process = multiprocessing.Process(target=tgclient)
+#     tgclient_process = multiprocessing.Process(target=run_tgclient)
+
+#     # Start both processes
+#     fastapi_process.start()
+#     tgclient_process.start()
+
+#     # Wait for both processes to finish
+#     fastapi_process.join()
+#     tgclient_process.join()
 
 
  
