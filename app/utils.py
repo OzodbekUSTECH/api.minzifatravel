@@ -5,7 +5,7 @@ from app import models
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from .Administrator.schema import *
+from app.Administrator.schema import *
 from typing import Annotated
 from sqlalchemy.orm import Session
 

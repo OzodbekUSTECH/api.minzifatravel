@@ -24,30 +24,15 @@ app.include_router(admin_router)
 app.include_router(manager_router)
 app.include_router(working_time_router)
 
-
-
-# def run_tgclient():
-#     # Запустите клиента Pyrogram
-#     tgclient.run()
-# @app.on_event("startup")
-# async def startup_event():
-#     fastapi_process = multiprocessing.Process(target=tgclient)
-#     tgclient_process = multiprocessing.Process(target=run_tgclient)
-
-#     # Start both processes
-#     fastapi_process.start()
-#     tgclient_process.start()
-
-#     # Wait for both processes to finish
-#     fastapi_process.join()
-#     tgclient_process.join()
-
+@app.on_event("startup")
+async def startup_event():
+    await tgclient.start()
 
  
     
-# @app.on_event("shutdown")
-# async def shutdown_event():
-#     tgclient_process.join()
+@app.on_event("shutdown")
+async def shutdown_event():
+    await tgclient.stop()
 
 from app import models
 from .utils import *
@@ -130,19 +115,3 @@ async def register(user: UserCreateSchema, db: Session = Depends(get_db)):
     # )
     return db_user
 
-
-
-# def main():
-#     # Запустить функцию run_tgclient() в отдельном процессе
-#     tgclient_process = multiprocessing.Process(target=run_tgclient)
-#     tgclient_process.start()
-
-#     # Основная логика вашего FastAPI приложения
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-#     # Дождитесь завершения процесса tgclient
-#     tgclient_process.join()
-
-# if __name__ == '__main__':
-#     main()

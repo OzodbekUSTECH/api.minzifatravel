@@ -172,6 +172,3 @@ async def handle_private_message(client: Client, message: TelegramMessage):
         db.add(user_message)
         db.commit()
 
-
-
-tgclient.run()
