@@ -108,6 +108,13 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                     await message.download(file_path)
                     filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
+                elif message.audio:
+                    # Генерация уникального имени файла
+                    filename = f"audio_{message.audio.file_unique_id}.mp3"
+                    file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения аудио
+                    await message.download(file_path)
+                    filepath = f"crm-ut.com/static/files/{filename}"
+                    content = message.caption or None
                 elif message.text:
                     content = message.text
 
@@ -175,6 +182,13 @@ async def handle_private_message(client: Client, message: TelegramMessage):
         elif message.video:
             filename = f"video_{message.video.file_unique_id}.mp4"  # Use .mp4 extension for video files
             file_path = os.path.join("/home/api.minzifatravel/static/files", filename) # Полный путь для сохранения видео
+            await message.download(file_path)
+            filepath = f"crm-ut.com/static/files/{filename}"
+            content = message.caption or None
+        elif message.audio:
+            # Генерация уникального имени файла
+            filename = f"audio_{message.audio.file_unique_id}.mp3"
+            file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения аудио
             await message.download(file_path)
             filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
