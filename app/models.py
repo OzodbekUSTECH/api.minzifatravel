@@ -12,20 +12,22 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     title = Column(String)
-    
-    timer_deadline = Column(String, nullable=True)
-    date_deadline = Column(String, nullable=True)
+    description = Column(String, nullable=True)
 
-    importance = Column(String)
-    status = Column(String, default='В обработке')
+    time_deadline = Column(String)
+    date_deadline = Column(String)
+
+    priority = Column(String)
+    is_done = Column(Boolean, default=False)
+    percent = Column(Numeric, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
     created_by_id = Column(Integer, ForeignKey("users.id"))
     created_by= relationship("User", foreign_keys=[created_by_id], back_populates="created_tasks")
 
-    staff_id = Column(Integer, ForeignKey('users.id'))
-    assigned_staff = relationship("User", foreign_keys=[staff_id], back_populates='assigned_tasks')
+    assigned_to_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    assigned_staff = relationship("User", foreign_keys=[assigned_to_id], back_populates='assigned_tasks')
 
 
 class User(Base):
@@ -34,13 +36,14 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     full_name = Column(String, index=True)
-    department = Column(String, index=True)
-    role = Column(String, nullable=True)
+    department = Column(String,  nullable=True, index=True) # Отдел продаж, Отдел бронирования, Отдел управления
+    role = Column(String, nullable=True) #менеджер, Директор
 
     # If it's a manager
     language = Column(String, nullable=True)
-    status = Column(String, default='Свободен')
-    amount_finished_clients = Column(Integer, default=0)
+    # status = Column(String, default='Работаю', index=True)
+    is_busy = Column(Boolean, default=False, index=True)
+    amount_finished_clients = Column(Integer, default=0, index=True)
     has_additional_client = Column(Boolean, default=False)
 
     email = Column(String, unique=True, index=True)
@@ -52,7 +55,7 @@ class User(Base):
     files = relationship("File", back_populates="manager")
     work_time = relationship("WorkTime", back_populates='staff')
     created_tasks = relationship("Task", foreign_keys=[Task.created_by_id], back_populates='created_by')
-    assigned_tasks = relationship("Task", foreign_keys=[Task.staff_id], back_populates='assigned_staff')
+    assigned_tasks = relationship("Task", foreign_keys=[Task.assigned_to_id], back_populates='assigned_staff')
 
 
 class Lead(Base):

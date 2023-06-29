@@ -1,8 +1,8 @@
-"""firstmig
+"""user.is_busy into bool
 
-Revision ID: cadd0a42b653
-Revises: 
-Create Date: 2023-06-27 17:29:16.401379
+Revision ID: c50e6fbe0beb
+Revises: 566320ff9014
+Create Date: 2023-06-28 20:23:05.557588
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cadd0a42b653'
-down_revision = None
+revision = 'c50e6fbe0beb'
+down_revision = '566320ff9014'
 branch_labels = None
 depends_on = None
 
@@ -24,17 +24,19 @@ def upgrade() -> None:
     sa.Column('department', sa.String(), nullable=True),
     sa.Column('role', sa.String(), nullable=True),
     sa.Column('language', sa.String(), nullable=True),
-    sa.Column('status', sa.String(), nullable=True),
+    sa.Column('is_busy', sa.Boolean(), nullable=True),
     sa.Column('amount_finished_clients', sa.Integer(), nullable=True),
     sa.Column('has_additional_client', sa.Boolean(), nullable=True),
     sa.Column('email', sa.String(), nullable=True),
     sa.Column('password', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_users_amount_finished_clients'), 'users', ['amount_finished_clients'], unique=False)
     op.create_index(op.f('ix_users_department'), 'users', ['department'], unique=False)
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_full_name'), 'users', ['full_name'], unique=False)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
+    op.create_index(op.f('ix_users_is_busy'), 'users', ['is_busy'], unique=False)
     op.create_table('clients',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('chat_id', sa.Integer(), nullable=True),
@@ -56,15 +58,17 @@ def upgrade() -> None:
     op.create_table('tasks',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=True),
-    sa.Column('timer_deadline', sa.String(), nullable=True),
+    sa.Column('description', sa.String(), nullable=True),
+    sa.Column('time_deadline', sa.String(), nullable=True),
     sa.Column('date_deadline', sa.String(), nullable=True),
-    sa.Column('importance', sa.String(), nullable=True),
-    sa.Column('status', sa.String(), nullable=True),
+    sa.Column('priority', sa.String(), nullable=True),
+    sa.Column('is_done', sa.Boolean(), nullable=True),
+    sa.Column('percent', sa.Numeric(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('created_by_id', sa.Integer(), nullable=True),
-    sa.Column('staff_id', sa.Integer(), nullable=True),
+    sa.Column('assigned_to_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['assigned_to_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['created_by_id'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['staff_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_tasks_id'), 'tasks', ['id'], unique=False)
@@ -122,9 +126,11 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_clients_full_name'), table_name='clients')
     op.drop_index(op.f('ix_clients_chat_id'), table_name='clients')
     op.drop_table('clients')
+    op.drop_index(op.f('ix_users_is_busy'), table_name='users')
     op.drop_index(op.f('ix_users_id'), table_name='users')
     op.drop_index(op.f('ix_users_full_name'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_index(op.f('ix_users_department'), table_name='users')
+    op.drop_index(op.f('ix_users_amount_finished_clients'), table_name='users')
     op.drop_table('users')
     # ### end Alembic commands ###

@@ -30,7 +30,7 @@ class RegUserSchemaResponse(BaseModel):
     department: str
     role: str
     language: str
-    status: str 
+    is_busy: bool 
     amount_finished_clients:Optional[int]
 
     class Config:
@@ -74,7 +74,7 @@ class UserSchema(BaseModel):
     department: str
     role: str
     language: str
-    status: str 
+    is_busy: bool
     amount_finished_clients:Optional[int]
     clients: list[Client]
 
@@ -88,28 +88,38 @@ class TaskSchema(BaseModel):
     id: int
     created_at: datetime
     created_by_id: int
-    staff_id: int
+    assigned_to_id: int
     title: str
-    importance: str
-    status: str
-    timer_deadline: str
-    date_deadline: Optional[date]
+    description: str
+    priority: str
+    percent: float
+    is_done: bool
+    time_deadline: str
+    date_deadline: str
 
     class Config:
         orm_mode = True
 
 
 class CreateTaskSchema(BaseModel):
+    assigned_to_id: int
     title: str
-    timer_deadline: Optional[str] = None
-    date_deadline: Optional[date] = None
-    importance: str
-    staff_id: int
+    description: str
+    time_deadline: str
+    date_deadline: str
+    priority: str
+    percent: float
+    
 
 from pydantic import BaseModel, Field
 class UpdateTaskSchema(BaseModel):
+    assigned_to_id: Optional[int] = None
     title: Optional[str] = None
-    timer_deadline: Optional[str] = None
+    description: Optional[str] = None
+    time_deadline: Optional[str] = None
     date_deadline: Optional[str] = None
-    importance: Optional[str] = None
-    staff_id: Optional[int] = None
+    priority: Optional[str] = None
+    percent: Optional[float] = None
+
+
+#######################################

@@ -84,25 +84,28 @@ async def update_client_status(client_id: int, new_status: str, current_user=Dep
     )
     return response
 
-@router.put('/status/update/', name="Update manager's status")
-async def update_manager_status_free(status: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    manager = db.query(models.User).filter(models.User.id == current_user.id).first()
+@router.put('/status/update/free', name="Update manager status into free")
+async def update_manager_status_free(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
 
-    if manager.status != status:
-        if status == "Free":
-            manager.status = status
-            manager.has_additional_client = False
-            db.commit()
+    current_user.is_busy = False
+    current_user.has_additional_client = False
+    db.commit()
 
-    return {"message": "Статус поменян"}
+    return {"message": "Статус поменян на работаю"}
+
+@router.put('/status/update/busy', name="Update manager status into busy")
+async def update_manager_status_free(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+
+    current_user.is_busy = True
+    db.commit()
+
+    return {"message": "Статус поменян на занят и что-то еще"}
 
 
 @router.post('/send_message/{client_id}')
 async def send_message(client_id: int, msg: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
 
-    if client.manager != current_user or not client:
-        raise HTTPException(status_code=404, detail="Client not found or not your client")
 
     await tgclient.send_message(chat_id=client.chat_id, text=msg)
     
@@ -124,9 +127,6 @@ async def send_message(client_id: int, msg: str, current_user=Depends(get_curren
 async def send_message(client_id: int, msg: str = None, files: list[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
     
-    if client.manager != current_user or not client:
-        raise HTTPException(status_code=404, detail="Client not found or not your client")
-
     media = []
     
     for i, file in enumerate(files):
@@ -189,10 +189,6 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
 async def send_message(client_id: int, files: list[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
 
-    if client.manager != current_user or not client:
-        raise HTTPException(status_code=404, detail="Client not found or not your client")
-
-
     media = []
 
     for file in files:
@@ -200,7 +196,7 @@ async def send_message(client_id: int, files: list[UploadFile] = File(...), curr
         file_stream = io.BytesIO(file_data)
         file_stream.name = file.filename
 
-        media_path = os.path.join('D:\\ozod\\tgProject\\files', file.filename)
+        media_path = os.path.join('D:\\ozod\\tgProject\\files', file.filename) #apiminzifa #files
         with open(media_path, 'wb') as f:
             f.write(file_data)
         media.append(types.InputMediaDocument(media_path))
@@ -234,31 +230,52 @@ async def get_own_worktimes(current_user=Depends(get_current_user), db: Session 
 
     records = db.query(models.WorkTime).filter(models.WorkTime.staff == current_user).all()
     
-    response = []
-    
-    for record in records:
-        record_data = OwnWorkTime(
-            id=record.id,
-            date= record.date,
-            start_time=record.start_time,
-            end_time=record.end_time
-        )
-        response.append(record_data)
+    return records
+
+@router.get('/get_own_worktimes/{date}', name='get own working times ', response_model=list[OwnWorkTime])
+async def get_own_worktimes_by_date(date: date, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+
+    records = db.query(models.WorkTime).filter(models.WorkTime.staff == current_user, models.WorkTime.date == date).all()
     
     return records
 
 
 
-##########
-@router.put('/change/task/status')
-async def change_task_status(task_id: int, new_status: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    task = db.query(models.Task).filter(models.Task.id == task_id, models.Task.assigned_staff == current_user).first()
+@router.get('/get_own_worktimes/range/', name='get own working times by a range', response_model=List[OwnWorkTime])
+async def get_own_worktimes_by_range_date(start_date: date, end_date: Optional[date] = None, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
 
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    elif task.assigned_staff != current_user:
-        raise HTTPException(status_code=403, detail="Task not assigned to current user")
+    records = db.query(models.WorkTime).filter(models.WorkTime.staff == current_user, models.WorkTime.date >= start_date)
+    if end_date:
+        records = records.filter(models.WorkTime.date <= end_date)
     
-    if task.status != new_status:
-        task.status = new_status
-        db.commit()
+    records = records.all()
+    return records
+    
+
+##########
+@router.post('/create_own_task', response_model=OwnTaskSchema)
+async def create_own_task(task: CreateOwnTask, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    db_task = models.Task(
+        title=task.title,
+        description=task.description,
+        time_deadline=task.time_deadline,
+        date_deadline=task.date_deadline,
+        priority=task.priority,
+        created_by=current_user
+    )
+    db.add(db_task)
+    db.commit()
+    return db_task
+
+
+@router.put('/change/task/status/done')
+async def change_task_status(task_id: int, db: Session = Depends(get_db)):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+
+    task.is_done = True
+    db.commit()
+    #условие если это assoigned_task то логика с статистикой
+    return {"message": "Задача успешно сделана!"}
+
+
+

@@ -26,7 +26,7 @@ api_id = '20122546'
 api_hash = 'c3ca5ae4e368b18eccd06a5edcd7eec0'
 
 # Создайте экземпляр клиента Pyrogram
-tgclient = Client("minzifaapi", api_id=api_id, api_hash=api_hash)
+tgclient = Client("oteldnotg", api_id=api_id, api_hash=api_hash)
 
 db = Session()
 @tgclient.on_message(filters.private & filters.incoming) 
@@ -204,3 +204,4 @@ async def handle_private_message(client: Client, message: TelegramMessage):
         db.add(user_message)
         db.commit()
 
+tgclient.run()

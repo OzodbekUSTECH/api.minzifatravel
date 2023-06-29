@@ -35,3 +35,26 @@ class ClientSchema(BaseModel):
 class ClientStatusChange(BaseModel):
     message: str
     details: dict
+
+
+######################################
+class OwnTaskSchema(BaseModel):
+    id: int
+    created_at: datetime
+    title: str
+    description: str
+    priority: str
+    is_done: bool
+    time_deadline: str
+    date_deadline: str
+
+    class Config:
+        orm_mode = True
+
+
+class CreateOwnTask(BaseModel):
+    title: str
+    description: str
+    time_deadline: str
+    date_deadline: str
+    priority: str
