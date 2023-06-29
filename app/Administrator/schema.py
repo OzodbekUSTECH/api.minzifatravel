@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import *
 from datetime import datetime, date
+from fastapi import UploadFile
 
 
 class TokenSchema(BaseModel):
@@ -25,6 +26,7 @@ class UserCreateSchema(BaseModel):
 
 class RegUserSchemaResponse(BaseModel):
     id: int
+    avatar: Optional[str]
     full_name: str
     email: str
     department: str
@@ -70,6 +72,7 @@ class ClientSchema(BaseModel):
 
 class UserSchema(BaseModel):
     id: int
+    avatar: Optional[str]
     full_name: str
     email: str
     department: str

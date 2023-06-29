@@ -67,6 +67,7 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
 
     response = UserSchema(
         id=current_user.id,
+        avatar=current_user.avatar,
         full_name=current_user.full_name,
         email=current_user.email,
         department=current_user.department,

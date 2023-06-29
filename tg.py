@@ -9,6 +9,7 @@ from datetime import datetime
 #lamguages
 
 
+
 def detect_user_language(message):
     ru_alphabet = set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')
     en_alphabet = set('abcdefghijklmnopqrstuvwxyz')
@@ -25,7 +26,7 @@ api_id = '20122546'
 api_hash = 'c3ca5ae4e368b18eccd06a5edcd7eec0'
 
 # Создайте экземпляр клиента Pyrogram
-tgclient = Client("oteldnotg", api_id=api_id, api_hash=api_hash)
+tgclient = Client("minzifaapi", api_id=api_id, api_hash=api_hash)
 
 db = Session()
 @tgclient.on_message(filters.private & filters.incoming) 
@@ -91,22 +92,22 @@ async def handle_private_message(client: Client, message: TelegramMessage):
 
                 if message.document:
                     filename = message.document.file_name
-                    file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения файла
+                    file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения файла
                     await message.download(file_path)
-                    filepath = file_path
+                    filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
                 elif message.photo:
                     # Генерация уникального имени файла
                     filename = f"photo_{message.photo.file_unique_id}.jpg"
-                    file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения фото
+                    file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения фото
                     await message.download(file_path)
-                    filepath = file_path
+                    filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
                 elif message.video:
                     filename = f"video_{message.video.file_unique_id}.mp4"  # Use .mp4 extension for video files
-                    file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения видео
+                    file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения видео
                     await message.download(file_path)
-                    filepath = file_path
+                    filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
                 elif message.text:
                     content = message.text
@@ -161,22 +162,22 @@ async def handle_private_message(client: Client, message: TelegramMessage):
 
         if message.document:
             filename = message.document.file_name
-            file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения файла
+            file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения файла
             await message.download(file_path)
-            filepath = file_path
+            filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
         elif message.photo:
             # Генерация уникального имени файла
             filename = f"photo_{message.photo.file_unique_id}.jpg"
-            file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения фото
+            file_path = os.path.join("/home/api.minzifatravel/static/files", filename) # Полный путь для сохранения фото
             await message.download(file_path)
-            filepath = file_path
+            filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
         elif message.video:
             filename = f"video_{message.video.file_unique_id}.mp4"  # Use .mp4 extension for video files
-            file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения видео
+            file_path = os.path.join("/home/api.minzifatravel/static/files", filename) # Полный путь для сохранения видео
             await message.download(file_path)
-            filepath = file_path
+            filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
         elif message.text:
             content = message.text

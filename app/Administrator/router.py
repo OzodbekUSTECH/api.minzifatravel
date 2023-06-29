@@ -101,6 +101,8 @@ async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), d
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
     
     staff = db.query(models.User).filter(models.User.id == user_id).first()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Пользователь не найден.")
     clients = []
     for client in staff.clients:
         messages_response = []
@@ -134,6 +136,7 @@ async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), d
         clients.append(client_data)
     user_data = UserSchema(
             id=staff.id,
+            avatar=staff.avatar,
             full_name=staff.full_name,
             email=staff.email,
             department=staff.department,
@@ -356,3 +359,11 @@ async def change_manager(client_id: int, manager_id: int, current_user=Depends(g
     db.commit()
 
     return {"message": "Менеджер у клиент сменен"}
+
+
+
+
+
+####################################avatar
+
+

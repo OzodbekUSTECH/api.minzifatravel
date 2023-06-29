@@ -35,6 +35,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     
+    avatar = Column(String, nullable=True)
     full_name = Column(String, index=True)
     department = Column(String,  nullable=True, index=True) # Отдел продаж, Отдел бронирования, Отдел управления
     role = Column(String, nullable=True) #менеджер, Директор

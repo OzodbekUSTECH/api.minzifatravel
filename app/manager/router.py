@@ -222,13 +222,13 @@ async def send_message(client_id: int, files: list[UploadFile] = File(...), curr
 
     return {"message": "Все файлы были успешно отправлены"}
 
+from pyrogram.types import InputMediaDocument
 @router.post('/send_one_file/{client_id}', name='send one /videos/files')
-async def send_message(client_id: int, file: UploadFile = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def send_file(client_id: int, file: UploadFile = File(...),  current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
-    file_bytes = await file.read()
-    file_obj = io.BytesIO(file_bytes)
-    file_obj.name = file.filename
-    await tgclient.send_document(chat_id=client.chat_id, document=file_obj)
+
+    await tgclient.send_document(client.chat_id, document=file.file)
+
 
     return {"message": "Success"}
 ##########
