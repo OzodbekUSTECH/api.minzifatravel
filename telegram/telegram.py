@@ -7,7 +7,7 @@ import asyncio
 from database.db import Session
 from datetime import datetime
 #lamguages
-
+import codecs
 
 
 def detect_user_language(message):
@@ -37,8 +37,7 @@ async def handle_private_message(client: Client, message: TelegramMessage):
         first_name = message.from_user.first_name or ""
         last_name = message.from_user.last_name or ""
         message_text = message.text or ""
-
-        # Определение языка по первому сообщению
+        
         language = detect_user_language(message_text)
         
 
@@ -94,26 +93,33 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                     filename = message.document.file_name
                     file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения файла
                     await message.download(file_path)
-                    filepath = f"localhost:8000/static/files/{filename}"
+                    filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
                 elif message.photo:
                     # Генерация уникального имени файла
                     filename = f"photo_{message.photo.file_unique_id}.jpg"
                     file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения фото
                     await message.download(file_path)
-                    filepath = f"localhost:8000/static/files/{filename}"
+                    filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
                 elif message.video:
                     filename = f"video_{message.video.file_unique_id}.mp4"  # Use .mp4 extension for video files
                     file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения видео
                     await message.download(file_path)
-                    filepath = f"localhost:8000/static/files/{filename}"
+                    filepath = f"crm-ut.com/static/files/{filename}"
+                    content = message.caption or None
+                elif message.voice:
+                # Генерация уникального имени файла
+                    filename = f"voice_{message.voice.file_unique_id}.ogg"
+                    file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения голосового сообщения
+                    await message.download(file_path)
+                    filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
                 elif message.text:
                     content = message.text
 
                 user_message = Message(
-                    text=content,
+                    text=codecs.encode(content, 'utf-8'),
                     lead = lead,
                     manager = None
                 )
@@ -164,42 +170,50 @@ async def handle_private_message(client: Client, message: TelegramMessage):
             filename = message.document.file_name
             file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения файла
             await message.download(file_path)
-            filepath = f"localhost:8000/static/files/{filename}"
+            filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
         elif message.photo:
             # Генерация уникального имени файла
             filename = f"photo_{message.photo.file_unique_id}.jpg"
             file_path = os.path.join("/home/api.minzifatravel/static/files", filename) # Полный путь для сохранения фото
             await message.download(file_path)
-            filepath = f"localhost:8000/static/files/{filename}"
+            filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
         elif message.video:
             filename = f"video_{message.video.file_unique_id}.mp4"  # Use .mp4 extension for video files
             file_path = os.path.join("/home/api.minzifatravel/static/files", filename) # Полный путь для сохранения видео
             await message.download(file_path)
-            filepath = f"localhost:8000/static/files/{filename}"
+            filepath = f"crm-ut.com/static/files/{filename}"
+            content = message.caption or None
+        elif message.voice:
+        # Генерация уникального имени файла
+            filename = f"voice_{message.voice.file_unique_id}.ogg"
+            file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения голосового сообщения
+            await message.download(file_path)
+            filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
         elif message.text:
             content = message.text
 
         user_message = Message(
-            text=content,
+            text=codecs.encode(content, 'utf-8'),
             lead = lead,
             manager = lead.manager
         )
 
         if filename:
                 # Создание объекта файла и связь с сообщением, пользователем, менеджером и чатрумом
-                file = File(
-                    filename=filename,
-                    filepath=filepath,
-                    lead=lead,
-                    manager=lead.manager
-                )
-                db.add(file)
-                db.commit()
+            file = File(
+                filename=filename,
+                filepath=filepath,
+                lead=lead,
+                manager=lead.manager
+            )
+            user_message.file_id = file.id
+            db.add(file)
+            db.commit()
                 
-                user_message.file_id = file.id
+                
 
         db.add(user_message)
         db.commit()

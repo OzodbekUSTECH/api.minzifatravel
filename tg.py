@@ -203,15 +203,15 @@ async def handle_private_message(client: Client, message: TelegramMessage):
 
         if filename:
                 # Создание объекта файла и связь с сообщением, пользователем, менеджером и чатрумом
-                file = File(
-                    filename=filename,
-                    filepath=filepath,
-                    lead=lead,
-                    manager=lead.manager
-                )
-                user_message.file_id = file.id
-                db.add(file)
-                db.commit()
+            file = File(
+                filename=filename,
+                filepath=filepath,
+                lead=lead,
+                manager=lead.manager
+            )
+            user_message.file_id = file.id
+            db.add(file)
+            db.commit()
                 
                 
 
