@@ -7,7 +7,7 @@ import asyncio
 from database.db import Session
 from datetime import datetime
 #lamguages
-import codecs
+
 
 
 def detect_user_language(message):
@@ -119,7 +119,7 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                     content = message.text
 
                 user_message = Message(
-                    text=codecs.encode(content, 'utf-8'),
+                    text=content,
                     lead = lead,
                     manager = None
                 )
@@ -172,6 +172,13 @@ async def handle_private_message(client: Client, message: TelegramMessage):
             await message.download(file_path)
             filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
+        elif message.voice:
+        # Генерация уникального имени файла
+            filename = f"voice_{message.voice.file_unique_id}.ogg"
+            file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения голосового сообщения
+            await message.download(file_path)
+            filepath = f"crm-ut.com/static/files/{filename}"
+            content = message.caption or None
         elif message.photo:
             # Генерация уникального имени файла
             filename = f"photo_{message.photo.file_unique_id}.jpg"
@@ -185,18 +192,11 @@ async def handle_private_message(client: Client, message: TelegramMessage):
             await message.download(file_path)
             filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
-        elif message.voice:
-        # Генерация уникального имени файла
-            filename = f"voice_{message.voice.file_unique_id}.ogg"
-            file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения голосового сообщения
-            await message.download(file_path)
-            filepath = f"crm-ut.com/static/files/{filename}"
-            content = message.caption or None
         elif message.text:
             content = message.text
 
         user_message = Message(
-            text=codecs.encode(content, 'utf-8'),
+            text= content,
             lead = lead,
             manager = lead.manager
         )
@@ -209,10 +209,10 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                 lead=lead,
                 manager=lead.manager
             )
-            user_message.file_id = file.id
+           
             db.add(file)
             db.commit()
-                
+            user_message.file_id = file.id
                 
 
         db.add(user_message)
