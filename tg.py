@@ -7,7 +7,6 @@ import asyncio
 from database.db import Session
 from datetime import datetime
 #lamguages
-from langdetect import detect
 
 
 def detect_user_language(message):
@@ -92,20 +91,20 @@ async def handle_private_message(client: Client, message: TelegramMessage):
 
                 if message.document:
                     filename = message.document.file_name
-                    file_path = os.path.join("D:\\ozod\\tgProject\\files", filename)  # Полный путь для сохранения файла
+                    file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения файла
                     await message.download(file_path)
                     filepath = file_path
                     content = message.caption or None
                 elif message.photo:
                     # Генерация уникального имени файла
                     filename = f"photo_{message.photo.file_unique_id}.jpg"
-                    file_path = os.path.join("D:\\ozod\\tgProject\\files", filename)  # Полный путь для сохранения фото
+                    file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения фото
                     await message.download(file_path)
                     filepath = file_path
                     content = message.caption or None
                 elif message.video:
                     filename = f"video_{message.video.file_unique_id}.mp4"  # Use .mp4 extension for video files
-                    file_path = os.path.join("D:\\ozod\\tgProject\\files", filename)  # Полный путь для сохранения видео
+                    file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения видео
                     await message.download(file_path)
                     filepath = file_path
                     content = message.caption or None
@@ -162,20 +161,20 @@ async def handle_private_message(client: Client, message: TelegramMessage):
 
         if message.document:
             filename = message.document.file_name
-            file_path = os.path.join("D:\\ozod\\tgProject\\files", filename)  # Полный путь для сохранения файла
+            file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения файла
             await message.download(file_path)
             filepath = file_path
             content = message.caption or None
         elif message.photo:
             # Генерация уникального имени файла
             filename = f"photo_{message.photo.file_unique_id}.jpg"
-            file_path = os.path.join("D:\\ozod\\tgProject\\files", filename)  # Полный путь для сохранения фото
+            file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения фото
             await message.download(file_path)
             filepath = file_path
             content = message.caption or None
         elif message.video:
             filename = f"video_{message.video.file_unique_id}.mp4"  # Use .mp4 extension for video files
-            file_path = os.path.join("D:\\ozod\\tgProject\\files", filename)  # Полный путь для сохранения видео
+            file_path = os.path.join("/home/files", filename)  # Полный путь для сохранения видео
             await message.download(file_path)
             filepath = file_path
             content = message.caption or None

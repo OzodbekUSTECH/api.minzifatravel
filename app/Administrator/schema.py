@@ -54,15 +54,16 @@ class MessageSchema(BaseModel):
     class Config:
         orm_mode = True
 
-class Client(BaseModel):
+class ClientSchema(BaseModel):
     id: int
     full_name: str
     language: str
     source: str
     created_at: datetime
     status: str
+    last_update: datetime
     description: str = None
-    chat: Optional[List[MessageSchema]] # Поле chat теперь необязательное
+    chat: List[MessageSchema] # Поле chat теперь необязательное
 
     class Config:
         orm_mode = True
@@ -76,11 +77,22 @@ class UserSchema(BaseModel):
     language: str
     is_busy: bool
     amount_finished_clients:Optional[int]
-    clients: list[Client]
+    clients: List[ClientSchema]
 
     class Config:
         orm_mode = True
 
+class UserUpdateSchema(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    department: Optional[str] = None
+    role: Optional[str] = None
+    language: Optional[str] = None
+
+class UserUpdatePasswordSchema(BaseModel):
+    old_password: str
+    new_password: str
 
 ##############################
 
@@ -88,11 +100,11 @@ class TaskSchema(BaseModel):
     id: int
     created_at: datetime
     created_by_id: int
-    assigned_to_id: int
+    assigned_to_id: Optional[int]
     title: str
     description: str
     priority: str
-    percent: float
+    percent: Optional[float]
     is_done: bool
     time_deadline: str
     date_deadline: str

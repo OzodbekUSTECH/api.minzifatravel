@@ -5,32 +5,35 @@ from datetime import datetime
 
 
 
-class FileSchema(BaseModel):
-    id: int
-    file_name: str
-    file_path: str
+# class FileSchema(BaseModel):
+#     id: int
+#     file_name: str
+#     file_path: str
 
 
-class MessageSchema(BaseModel):
-    id: int
-    text: str = None
-    is_manager_message: bool
-    time: datetime
-    file: FileSchema = None
+# class MessageSchema(BaseModel):
+#     id: int
+#     text: str = None
+#     is_manager_message: bool
+#     time: datetime
+#     file: FileSchema = None
 
-class ClientSchema(BaseModel):
-    id: int
-    chat_id: int
-    full_name: str
-    language: str
-    source: str
-    status: str
-    last_manager_update: datetime
-    description: str = None
-    chat: list[MessageSchema]
+#     class Config:
+#         orm_mode = True
 
-    class Config:
-        orm_mode = True
+# class ClientSchema(BaseModel):
+#     id: int
+#     full_name: str
+#     language: str
+#     source: str
+#     created_at: datetime
+#     status: str
+#     last_update: datetime
+#     description: str = None
+#     chat: list[MessageSchema] # Поле chat теперь необязательное
+
+#     class Config:
+#         orm_mode = True
 
 class ClientStatusChange(BaseModel):
     message: str
@@ -58,3 +61,10 @@ class CreateOwnTask(BaseModel):
     time_deadline: str
     date_deadline: str
     priority: str
+
+class ChangeOwnTaskSchema(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    time_deadline: Optional[str] = None
+    date_deadline: Optional[str] = None
+    priority: Optional[str] = None

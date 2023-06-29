@@ -19,9 +19,9 @@ async def get_own_clients(current_user: models.User = Depends(get_current_user),
 
     response = []
     for client in clients:
-        messages = db.query(models.Message).filter(models.Message.lead == client).order_by('id').all()
-        message_data = []
-        for message in messages:
+       
+        messages_response = []
+        for message in client.messages:
             file_data = None
             if message.file:
                 file_data = FileSchema(
@@ -29,24 +29,24 @@ async def get_own_clients(current_user: models.User = Depends(get_current_user),
                     file_name=message.file.filename,
                     file_path=message.file.filepath
                 )
-            message_item = MessageSchema(
+            message_data = MessageSchema(
                 id=message.id,
                 text=message.text,
                 is_manager_message=message.is_manager_message,
                 time=message.timestamp,
                 file = file_data
             )
-            message_data.append(message_item)
+            messages_response.append(message_data)
         client_data = ClientSchema(
-            id=client.id,
-            chat_id=client.chat_id,
+           id=client.id,
             full_name=client.full_name,
-            last_manager_update=client.last_manager_update,
-            status = client.status,
             language=client.language,
             source=client.source,
-            description = client.description,
-            chat = message_data
+            created_at=client.created_at,
+            status=client.status,
+            last_update=client.last_manager_update,
+            description=client.description,
+            chat = messages_response
         )
         response.append(client_data)
 
@@ -57,8 +57,8 @@ async def get_own_clients(current_user: models.User = Depends(get_current_user),
 async def update_client_status(client_id: int, new_status: str, current_user=Depends(get_current_user),db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.id == client_id, models.Lead.manager == current_user).first()
 
-    if client.manager != current_user or not client:
-        raise HTTPException(status_code=404, detail="Client not found or not your client")
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
 
     if client.status != new_status: #обработан != Квалификация
         if client.status == "Обработан":
@@ -222,7 +222,15 @@ async def send_message(client_id: int, files: list[UploadFile] = File(...), curr
 
     return {"message": "Все файлы были успешно отправлены"}
 
+@router.post('/send_one_file/{client_id}', name='send one /videos/files')
+async def send_message(client_id: int, file: UploadFile = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
+    file_bytes = await file.read()
+    file_obj = io.BytesIO(file_bytes)
+    file_obj.name = file.filename
+    await tgclient.send_document(chat_id=client.chat_id, document=file_obj)
 
+    return {"message": "Success"}
 ##########
 from app.workingtime.schema import *
 @router.get('/get_own_worktimes', name='get own working times', response_model=list[OwnWorkTime])
@@ -253,6 +261,18 @@ async def get_own_worktimes_by_range_date(start_date: date, end_date: Optional[d
     
 
 ##########
+from sqlalchemy import or_
+
+@router.get('/get_tasks', response_model=list[TaskSchema])
+async def get_own_tasks(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    all_tasks = db.query(models.Task).filter(
+        or_(
+            models.Task.created_by == current_user,
+            models.Task.assigned_staff == current_user
+        )
+    ).order_by('id').all()
+    return all_tasks
+
 @router.post('/create_own_task', response_model=OwnTaskSchema)
 async def create_own_task(task: CreateOwnTask, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     db_task = models.Task(
@@ -267,6 +287,25 @@ async def create_own_task(task: CreateOwnTask, current_user=Depends(get_current_
     db.commit()
     return db_task
 
+@router.put('/change/{task_id}/data')
+async def change_own_task(task_id: int, task: ChangeOwnTaskSchema,  db: Session = Depends(get_db)):
+    task_update = db.query(models.Task).filter(models.Task.id == task_id).first()
+
+    if task.title is not None:
+        task_update.title = task.title
+    if task.description is not None:
+        task_update.description = task.description
+    if task.time_deadline is not None:
+        task_update.time_deadline = task.time_deadline
+    if task.date_deadline is not None:
+        task_update.date_deadline = task.date_deadline
+    if task.priority is not None:
+        task_update.priority = task.priority
+    
+    db.commit()
+    return {"message": "Задача бела изменена"}
+
+
 
 @router.put('/change/task/status/done')
 async def change_task_status(task_id: int, db: Session = Depends(get_db)):
@@ -277,5 +316,12 @@ async def change_task_status(task_id: int, db: Session = Depends(get_db)):
     #условие если это assoigned_task то логика с статистикой
     return {"message": "Задача успешно сделана!"}
 
-
+@router.delete('/delete/task', name='delete only own task')
+async def delete_task(task_id: int, db: Session = Depends(get_db)):
+    own_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not own_task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Задача не найдена!")
+    db.delete(own_task)
+    db.commit()
+    return {"message": "Задача удалена"}
 

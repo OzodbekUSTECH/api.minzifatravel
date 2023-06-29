@@ -7,7 +7,7 @@ import asyncio
 from database.db import Session
 from datetime import datetime
 #lamguages
-from langdetect import detect
+
 
 
 def detect_user_language(message):

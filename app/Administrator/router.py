@@ -12,6 +12,8 @@ router = APIRouter(
 )
 
 
+
+
 @router.post('/registration', summary="Create a new user", response_model=RegUserSchemaResponse)
 async def register(user: UserCreateSchema,current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
@@ -33,15 +35,6 @@ async def register(user: UserCreateSchema,current_user=Depends(get_current_user)
     except IntegrityError:
         raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует.")
 
-
-    # response = RegUserSchemaResponse(
-    #     id=db_user.id,
-    #     full_name=db_user.full_name,
-    #     email=db_user.email,
-    #     department=db_user.department,
-    #     role=db_user.role,
-    #     language=db_user.language
-    # )
     return db_user
 
 
@@ -51,7 +44,7 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
 
-    all_staff = db.query(models.User).order_by('id').all()
+    all_staff = db.query(models.User).filter(models.User.id != current_user.id).order_by('id').all()
     response = []
     for staff in all_staff:
         clients = []
@@ -73,13 +66,14 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
                     file = file_data
                 )
                 messages_response.append(message_data)
-            client_data = Client(
+            client_data = ClientSchema(
                 id=client.id,
                 full_name=client.full_name,
                 language=client.language,
                 source=client.source,
                 created_at=client.created_at,
                 status=client.status,
+                last_update=client.last_manager_update,
                 description=client.description,
                 chat = messages_response
             )
@@ -100,6 +94,106 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
 
     return response
 
+
+@router.get('/get_user/{user_id}', name='get any user by id', response_model = UserSchema)
+async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    
+    staff = db.query(models.User).filter(models.User.id == user_id).first()
+    clients = []
+    for client in staff.clients:
+        messages_response = []
+        for message in client.messages:
+            file_data = None
+            if message.file:
+                file_data = FileSchema(
+                    id=message.file.id,
+                    file_name=message.file.filename,
+                    file_path=message.file.filepath
+                )
+            message_data = MessageSchema(
+                id=message.id,
+                text=message.text,
+                is_manager_message=message.is_manager_message,
+                time=message.timestamp,
+                file = file_data
+            )
+            messages_response.append(message_data)
+        client_data = ClientSchema(
+            id=client.id,
+            full_name=client.full_name,
+            language=client.language,
+            source=client.source,
+            created_at=client.created_at,
+            status=client.status,
+            last_update=client.last_manager_update,
+            description=client.description,
+            chat = messages_response
+        )
+        clients.append(client_data)
+    user_data = UserSchema(
+            id=staff.id,
+            full_name=staff.full_name,
+            email=staff.email,
+            department=staff.department,
+            role=staff.role,
+            language=staff.language,
+            is_busy=staff.is_busy,
+            amount_finished_clients=staff.amount_finished_clients,
+            clients=clients 
+        )
+    return user_data
+
+
+
+@router.put('/change/{manager_id}/data', response_model=RegUserSchemaResponse)
+async def change_user_data(manager_id: int, user: UserUpdateSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    
+    user_update = db.query(models.User).filter(models.User.id == manager_id).first()
+
+    if user.full_name is not None:
+        user_update.full_name = user.full_name
+    if user.email is not None:
+        user_update.email = user.email
+    if user.department is not None:
+        user_update.department = user.department
+    if user.role is not None:
+        user_update.role = user.role
+    if user.language is not None:
+        user_update.language = user.language
+
+
+    db.commit()
+    db.refresh(user_update)
+    return user_update
+
+@router.put('/change/{manager_id}/password')
+async def change_user_password(manager_id: int, user: UserUpdatePasswordSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    
+    user_update = db.query(models.User).filter(models.User.id == manager_id).first()
+    if verify_password(user.old_password, user_update.password):
+        new_hashed_password = pwd_context.hash(user.new_password)
+        user_update.password = new_hashed_password
+        db.commit()
+        return {"message": "Password changed"}
+    else:
+        raise HTTPException(status_code=400, detail="Неверный пароль")
+
+@router.delete('/delete/{user_id}')
+async def delete_user(user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден.")
+    db.delete(user)
+    db.commit()
+    return {"message": "Пользователь удален!"}
 
 @router.get('/get_all_tasks', response_model=List[TaskSchema])
 async def get_all_tasks(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
