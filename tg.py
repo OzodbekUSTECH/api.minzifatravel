@@ -7,7 +7,7 @@ import asyncio
 from database.db import Session
 from datetime import datetime
 #lamguages
-
+import codecs
 
 
 def detect_user_language(message):
@@ -37,8 +37,7 @@ async def handle_private_message(client: Client, message: TelegramMessage):
         first_name = message.from_user.first_name or ""
         last_name = message.from_user.last_name or ""
         message_text = message.text or ""
-
-        # Определение языка по первому сообщению
+        
         language = detect_user_language(message_text)
         
 
@@ -113,7 +112,7 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                     content = message.text
 
                 user_message = Message(
-                    text=content,
+                    text=codecs.encode(content, 'utf-8'),
                     lead = lead,
                     manager = None
                 )
@@ -183,7 +182,7 @@ async def handle_private_message(client: Client, message: TelegramMessage):
             content = message.text
 
         user_message = Message(
-            text=content,
+            text=codecs.encode(content, 'utf-8'),
             lead = lead,
             manager = lead.manager
         )
