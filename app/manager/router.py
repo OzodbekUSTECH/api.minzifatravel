@@ -222,15 +222,57 @@ async def send_message(client_id: int, files: list[UploadFile] = File(...), curr
 
     return {"message": "Все файлы были успешно отправлены"}
 
-from pyrogram.types import InputMediaDocument
+from fastapi import File, UploadFile
+import secrets
+from fastapi.staticfiles import StaticFiles
+from PIL import Image
+from fastapi.responses import FileResponse
+
+router.mount('/static', StaticFiles(directory='static'), name='static')
+
 @router.post('/send_one_file/{client_id}', name='send one /videos/files')
 async def send_file(client_id: int, file: UploadFile = File(...),  current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
+    
+    FILEPATH = "./static/files/"
+    filename = file.filename
+    generated_name = FILEPATH + filename
+    file_content = await file.read()
 
-    await tgclient.send_document(client.chat_id, document=file.file)
+    with open(generated_name, 'wb') as f:
+        f.write(file_content)
+
+    file.close()
+    file_url = "crm-ut.com" + generated_name[1:]
+    db_file = models.File(
+        filename=file.filename,
+        filepath=file_url,
+        lead=client,
+        manager=current_user
+    )
+    db_message = models.Message(
+        text=None,
+        lead=client,
+        manager=current_user,
+        is_manager_message=True,
+        file=db_file
+    )
+
+    db.add(db_message)
+    db.commit()
+
+    # Отправка документа с использованием Pyrogram
+    await tgclient.send_document(
+        chat_id=client.chat_id,
+        document=generated_name,
+        caption=file.filename  # Используйте оригинальное имя файла в качестве заголовка
+    )
+
+    # Возвращаем успешный ответ
+    return {"message": "File sent successfully"}
 
 
-    return {"message": "Success"}
+
 ##########
 from app.workingtime.schema import *
 @router.get('/get_own_worktimes', name='get own working times', response_model=list[OwnWorkTime])
