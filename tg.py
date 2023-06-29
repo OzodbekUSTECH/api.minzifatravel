@@ -108,10 +108,10 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                     await message.download(file_path)
                     filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
-                elif message.audio:
-                    # Генерация уникального имени файла
-                    filename = f"audio_{message.audio.file_unique_id}.mp3"
-                    file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения аудио
+                elif message.voice:
+                # Генерация уникального имени файла
+                    filename = f"voice_{message.voice.file_unique_id}.ogg"
+                    file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения голосового сообщения
                     await message.download(file_path)
                     filepath = f"crm-ut.com/static/files/{filename}"
                     content = message.caption or None
@@ -185,10 +185,10 @@ async def handle_private_message(client: Client, message: TelegramMessage):
             await message.download(file_path)
             filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
-        elif message.audio:
-            # Генерация уникального имени файла
-            filename = f"audio_{message.audio.file_unique_id}.mp3"
-            file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения аудио
+        elif message.voice:
+        # Генерация уникального имени файла
+            filename = f"voice_{message.voice.file_unique_id}.ogg"
+            file_path = os.path.join("/home/api.minzifatravel/static/files", filename)  # Полный путь для сохранения голосового сообщения
             await message.download(file_path)
             filepath = f"crm-ut.com/static/files/{filename}"
             content = message.caption or None
