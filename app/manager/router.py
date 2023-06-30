@@ -137,19 +137,19 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
     media = []
     
     for i, file in enumerate(files):
-        FILEPATH = "./static/files/"
+        
         filename = file.filename
         extension = filename.split('.')[1]
         token_name = secrets.token_hex(10)+"."+extension
-        generated_name = FILEPATH + token_name
+        file_path = os.path.join("/home/api.minzifatravel/static/files", token_name)
         file_content = await file.read()
         
-        with open(generated_name, 'wb') as file:
+        with open(file_path, 'wb') as file:
             file.write(file_content)
 
         file.close()
-        media.append(types.InputMediaDocument(generated_name))
-        media_path = "crm-ut.com" + generated_name[1:]
+        media.append(types.InputMediaDocument(file_path))
+        media_path = f"crm-ut.com/static/files/{token_name}"
         db_file = models.File(
             filename=filename,
             filepath=media_path,
