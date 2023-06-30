@@ -138,8 +138,8 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
     
     for i, file in enumerate(files):
         file_data = await file.read()
-        file_stream = io.BytesIO(file_data)
-        file_stream.name = file.filename
+        
+        
 
         #############################unique filenmaes #################
         unique_filename = str(uuid.uuid4())
@@ -147,11 +147,11 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
         
 
 
-        media_path = os.path.join('/home/api.minzifatravel/staic/files', unique_filename + file_extension)
-        with open(media_path, 'wb') as f:
+        media_path_d = os.path.join('/home/api.minzifatravel/staic/files', unique_filename + file_extension)
+        with open(media_path_d, 'wb') as f:
             f.write(file_data)
-        media.append(types.InputMediaDocument(media_path))
-        media_path = f"crm-ut.com/static/files/{media_path}"
+        media.append(types.InputMediaDocument(media_path_d))
+        media_path = f"crm-ut.com/static/files/{media_path_d}"
         db_file = models.File(
             filename=file.filename,
             filepath=media_path,
