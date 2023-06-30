@@ -148,8 +148,9 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
             file.write(file_content)
 
         file.close()
-        media.append(types.InputMediaDocument(file_path))
         media_path = f"crm-ut.com/static/files/{token_name}"
+        
+        
         db_file = models.File(
             filename=filename,
             filepath=media_path,
@@ -177,7 +178,7 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
 
         db.add(db_message)
         db.commit()
-
+        media.append(types.InputMediaDocument(media_path))
     media[-1].caption = msg
 
     await tgclient.send_media_group(chat_id=client.chat_id, media=media)
