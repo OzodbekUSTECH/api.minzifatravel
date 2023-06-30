@@ -59,6 +59,7 @@ class MessageSchema(BaseModel):
 class ClientSchema(BaseModel):
     id: int
     full_name: str
+    phone_number: str
     language: str
     source: str
     created_at: datetime

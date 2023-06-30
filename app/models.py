@@ -68,6 +68,7 @@ class Lead(Base):
     last_manager_update = Column(DateTime, default=datetime.utcnow, index=True)
 
     full_name = Column(String, index=True)
+    phone_number = Column(String, nullable=True, index=True)
     language = Column(String)
 
     manager_id = Column(Integer, ForeignKey('users.id'))

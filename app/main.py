@@ -104,15 +104,6 @@ async def register(user: UserCreateSchema, db: Session = Depends(get_db)):
     except IntegrityError:
         raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует.")
 
-
-    # response = RegUserSchemaResponse(
-    #     id=db_user.id,
-    #     full_name=db_user.full_name,
-    #     email=db_user.email,
-    #     department=db_user.department,
-    #     role=db_user.role,
-    #     language=db_user.language
-    # )
     return db_user
 
 

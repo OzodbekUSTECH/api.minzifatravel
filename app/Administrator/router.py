@@ -39,7 +39,7 @@ async def register(user: UserCreateSchema,current_user=Depends(get_current_user)
 
 
 
-@router.get('/get_all_staff', name="get list of staff with their clients and full chats", response_model=list[UserSchema])
+@router.get('/get_all_staff', name="get list of staff with their clients and full chats(except yourself)", response_model=list[UserSchema])
 async def get_all_staff(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
@@ -69,6 +69,7 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
             client_data = ClientSchema(
                 id=client.id,
                 full_name=client.full_name,
+                phone_number=client.phone_number,
                 language=client.language,
                 source=client.source,
                 created_at=client.created_at,
@@ -125,6 +126,7 @@ async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), d
         client_data = ClientSchema(
             id=client.id,
             full_name=client.full_name,
+            phone_number=client.phone_number,
             language=client.language,
             source=client.source,
             created_at=client.created_at,

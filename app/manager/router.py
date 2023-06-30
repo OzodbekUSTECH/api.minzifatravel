@@ -47,6 +47,7 @@ async def get_own_clients(current_user: models.User = Depends(get_current_user),
         client_data = ClientSchema(
            id=client.id,
             full_name=client.full_name,
+            phone_number=client.phone_number,
             language=client.language,
             source=client.source,
             created_at=client.created_at,
@@ -129,7 +130,7 @@ async def send_message(client_id: int, msg: str, current_user=Depends(get_curren
     
     return {"message": "Сообщение отправлено успешно"}
 
-import uuid
+
 @router.post('/send_files_wtf/{client_id}', name='send files/photos/videos with/without caption(text)')
 async def send_message(client_id: int, msg: str = None, files: list[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()

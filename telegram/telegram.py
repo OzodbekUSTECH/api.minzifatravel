@@ -37,15 +37,14 @@ async def handle_private_message(client: Client, message: TelegramMessage):
         first_name = message.from_user.first_name or ""
         last_name = message.from_user.last_name or ""
         message_text = message.text or ""
-        
-        language = detect_user_language(message_text)
-        
+        phone_number = message.from_user.phone_number or None
 
         lead = db.query(Lead).filter_by(chat_id=lead_id).first()
 
         if not lead:
+            language = detect_user_language(message_text)
             # Создание нового пользователя
-            lead = Lead(chat_id=lead_id, full_name=f"{first_name} {last_name}", language=language, source="Telegram")
+            lead = Lead(chat_id=lead_id, full_name=f"{first_name} {last_name}", phone_number=phone_number, language=language, source="Telegram")
             db.add(lead)
             db.commit()
 
@@ -143,7 +142,7 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                 while True:
                     
                     await asyncio.sleep(5)
-                    available_manager = db.query(User).filter_by(role="Отдел продаж", language=lead.language, is_busy=False).first()
+                    available_manager = db.query(User).filter_by(department="Отдел продаж", language=lead.language, is_busy=False).first()
                     if available_manager:
                         # Присоединение пользователя к свободному менеджеру
                         lead.manager_id = available_manager.id
