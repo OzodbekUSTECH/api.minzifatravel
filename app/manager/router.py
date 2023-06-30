@@ -6,12 +6,19 @@ from telegram.telegram import tgclient
 import os
 import io
 from pyrogram import types
+from fastapi import File, UploadFile
+import secrets
+from fastapi.staticfiles import StaticFiles
+from PIL import Image
+from fastapi.responses import FileResponse
+
+
 router = APIRouter(
     prefix='/manager',
     tags = ['Manager'],
     dependencies=[Depends(get_current_user)]
 )
-
+router.mount('/static', StaticFiles(directory='static'), name='static')
 
 @router.get('/own_clients', name='get own clients with a full chat', response_model=list[ClientSchema])
 async def get_own_clients(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -123,7 +130,7 @@ async def send_message(client_id: int, msg: str, current_user=Depends(get_curren
     return {"message": "Сообщение отправлено успешно"}
 
 
-@router.post('/send_files/{client_id}', name='send files/photos/videos with/without caption(text)')
+@router.post('/send_files_wtf/{client_id}', name='send files/photos/videos with/without caption(text)')
 async def send_message(client_id: int, msg: str = None, files: list[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
     
@@ -185,25 +192,25 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
     return {"message": "Сообщение отправлено успешно"}
 
 
-@router.post('/send_only_files/{client_id}', name='send only photos/videos/files')
-async def send_message(client_id: int, files: list[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+@router.post('/send_multiple_files/{client_id}', name='send multiple files /videos/files')
+async def send_files(client_id: int, files: List[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
-
-    media = []
-
+    FILEPATH = "./static/files/"
     for file in files:
-        file_data = await file.read()
-        file_stream = io.BytesIO(file_data)
-        file_stream.name = file.filename
+        filename = file.filename
+        extension = filename.split('.')[1]
+        token_name = secrets.token_hex(10)+"."+extension
+        generated_name = FILEPATH + token_name
+        file_content = await file.read()
 
-        media_path = os.path.join('D:\\ozod\\tgProject\\files', file.filename) #apiminzifa #files
-        with open(media_path, 'wb') as f:
-            f.write(file_data)
-        media.append(types.InputMediaDocument(media_path))
+        with open(generated_name, 'wb') as file_obj:
+            file_obj.write(file_content)
 
+        file_obj.close()
+        file_url = "crm-ut.com" + generated_name[1:]
         db_file = models.File(
-            filename=file.filename,
-            filepath=media_path,
+            filename=filename,
+            filepath=file_url,
             lead=client,
             manager=current_user
         )
@@ -217,18 +224,13 @@ async def send_message(client_id: int, files: list[UploadFile] = File(...), curr
 
         db.add(db_message)
         db.commit()
-    
-    await tgclient.send_media_group(chat_id=client.chat_id, media=media)
+        file_url = "https://crm-ut.com" + generated_name[1:]
+        # Отправка документа с использованием Pyrogram
+        await tgclient.send_document(
+            chat_id=client.chat_id,
+            document=file_url
+        )
 
-    return {"message": "Все файлы были успешно отправлены"}
-
-from fastapi import File, UploadFile
-import secrets
-from fastapi.staticfiles import StaticFiles
-from PIL import Image
-from fastapi.responses import FileResponse
-
-router.mount('/static', StaticFiles(directory='static'), name='static')
 
 @router.post('/send_one_file/{client_id}', name='send one /videos/files')
 async def send_file(client_id: int, file: UploadFile = File(...),  current_user=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -236,16 +238,18 @@ async def send_file(client_id: int, file: UploadFile = File(...),  current_user=
     
     FILEPATH = "./static/files/"
     filename = file.filename
-    generated_name = FILEPATH + filename
+    extension = filename.split('.')[1]
+    token_name = secrets.token_hex(10)+"."+extension
+    generated_name = FILEPATH + token_name
     file_content = await file.read()
 
-    with open(generated_name, 'wb') as f:
-        f.write(file_content)
+    with open(generated_name, 'wb') as file:
+        file.write(file_content)
 
     file.close()
     file_url = "crm-ut.com" + generated_name[1:]
     db_file = models.File(
-        filename=file.filename,
+        filename=filename,
         filepath=file_url,
         lead=client,
         manager=current_user
