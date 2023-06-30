@@ -133,14 +133,21 @@ async def send_message(client_id: int, msg: str, current_user=Depends(get_curren
 @router.post('/send_files_wtf/{client_id}', name='send files/photos/videos with/without caption(text)')
 async def send_message(client_id: int, msg: str = None, files: list[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
-    
+    FILEPATH = "./static/files/"
     media = []
     
     for i, file in enumerate(files):
-        file_data = await file.read()
-        file_stream = io.BytesIO(file_data)
-        file_stream.name = file.filename
-
+        filename = file.filename
+        # file_stream = io.BytesIO(file_data)
+        extension = filename.split('.')[1]
+        token_name = secrets.token_hex(10)+"."+extension
+        generated_name = FILEPATH + token_name
+        file_content = await file.read()
+        with open(generated_name, 'wb') as file:
+            file.write(file_content)
+        file.close()
+        
+        file_url = "https://crm-ut.com" + generated_name[1:]
         #############################unique filenmaes #################
         # unique_filename = str(uuid.uuid4())
         # file_extension = os.path.splitext(file.filename)[1]
@@ -152,14 +159,12 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
         ################################################
 
 
-        media_path = os.path.join('D:\\ozod\\tgProject\\files', file.filename)
-        with open(media_path, 'wb') as f:
-            f.write(file_data)
-        media.append(types.InputMediaDocument(media_path))
+       
+        media.append(types.InputMediaDocument(file_url))
 
         db_file = models.File(
-            filename=file.filename,
-            filepath=media_path,
+            filename=filename,
+            filepath=file_url,
             lead=client,
             manager=current_user,
         )
