@@ -71,8 +71,9 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                     await client.send_message(lead.chat_id, "Welcome to MINZIFA TRAVEL!")
   
             elif better_manager:
-                better_manager.has_additional_client = True
+                
                 lead.manager_id = better_manager.id
+                better_manager.has_additional_client = True
                 db.commit()
                 if lead.language == "ru":
                     await client.send_message(lead.chat_id, "Добро пожаловать в MINZIFA TRAVEL!")

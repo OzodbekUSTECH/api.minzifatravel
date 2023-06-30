@@ -48,6 +48,7 @@ async def get_own_clients(current_user: models.User = Depends(get_current_user),
            id=client.id,
             full_name=client.full_name,
             phone_number=client.phone_number,
+            email=client.email,
             language=client.language,
             source=client.source,
             created_at=client.created_at,
@@ -59,6 +60,42 @@ async def get_own_clients(current_user: models.User = Depends(get_current_user),
         response.append(client_data)
 
     return response
+
+@router.post('/create/lead', response_model = ClientSchema)
+async def create_lead(lead: CreateClientSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    db_lead = models.Lead(
+        full_name=lead.full_name,
+        phone_number=lead.phone_number,
+        email=lead.email,
+        language=lead.language,
+        source=lead.source,
+    )
+    db_lead.manager = current_user
+    db.add(db_lead)
+    db.commit()
+    db.refresh(db_lead)
+    return db_lead
+
+@router.put('/update/{lead_id}/data')
+async def update_lead_data(lead_id: int, lead: UpdateClientSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    db_lead = db.query(models.Lead).filter(models.Lead.id == lead_id).first()
+    if not db_lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    if db_lead.manager != current_user:
+        raise HTTPException(status_code=403, detail="You are not the manager of this lead")
+    if lead.full_name is not None:
+        db_lead.full_name = lead.full_name
+    if lead.phone_number is not None:
+        db_lead.phone_number = lead.phone_number
+    if lead.email is not None:
+        db_lead.email = lead.email
+    if lead.language is not None:
+        db_lead.language = lead.language
+    if lead.source is not None:
+        db_lead.source = lead.source
+    db.commit()
+    db.refresh(db_lead)
+    return db_lead
 
 
 @router.put("/{client_id}/update/status", name="update client status", response_model=ClientStatusChange)
@@ -110,25 +147,28 @@ async def update_manager_status_free(current_user=Depends(get_current_user), db:
     return {"message": "Статус поменян на занят и что-то еще"}
 
 
-@router.post('/send_message/{client_id}')
-async def send_message(client_id: int, msg: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+@router.post('/send_message/{client_id}', name="Send message to a client")
+async def send_message_msg(client_id: int, msg: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
+    try:
+        if client.chat_id:
+            await tgclient.send_message(chat_id=client.chat_id, text=msg)
+        else:
+            await tgclient.send_message(chat_id=client.phone_number, text=msg)
 
-
-    await tgclient.send_message(chat_id=client.chat_id, text=msg)
+        db_message = models.Message(
+            text=msg,
+            lead=client,
+            manager=current_user,
+            is_manager_message = True
+        )
+        db.add(db_message)
+        db.commit()
+        db.refresh(db_message)
     
-    db_message = models.Message(
-        text=msg,
-        lead=client,
-        manager=current_user,
-        is_manager_message = True
-    )
-    db.add(db_message)
-    db.commit()
-    db.refresh(db_message)
-    
-    
-    return {"message": "Сообщение отправлено успешно"}
+        return {"message": "Сообщение отправлено успешно"}
+    except Exception:
+        return {"message": "Личка у пользователя закрыта"}
 
 
 @router.post('/send_files_wtf/{client_id}', name='send files/photos/videos with/without caption(text)')
@@ -225,6 +265,8 @@ async def send_files(client_id: int, files: List[UploadFile] = File(...), curren
             chat_id=client.chat_id,
             document=file_url
         )
+    
+    return {"message": "Сообщение отправлено успешно"}
 
 
 @router.post('/send_one_file/{client_id}', name='send one /videos/files')

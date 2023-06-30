@@ -56,6 +56,7 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
             id = client.id,
             full_name=client.full_name,
             phone_number=client.phone_number,
+            email = client.email,
             language=client.language,
             source=client.source,
             created_at=client.created_at,

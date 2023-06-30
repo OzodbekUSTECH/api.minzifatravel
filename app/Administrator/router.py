@@ -70,6 +70,7 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
                 id=client.id,
                 full_name=client.full_name,
                 phone_number=client.phone_number,
+                email=client.email,
                 language=client.language,
                 source=client.source,
                 created_at=client.created_at,
@@ -127,6 +128,7 @@ async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), d
             id=client.id,
             full_name=client.full_name,
             phone_number=client.phone_number,
+            email=client.email,
             language=client.language,
             source=client.source,
             created_at=client.created_at,
@@ -150,6 +152,17 @@ async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), d
         )
     return user_data
 
+@router.delete('/delte/lead/{lead_id}')
+async def delete_lead(lead_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    lead = db.query(models.Lead).filter(models.Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Лид не найден.")
+    db.delete(lead)
+    db.commit()
+
+    return {"message": "Лид успешно удален!"}
 
 
 @router.put('/change/{manager_id}/data', response_model=RegUserSchemaResponse)
@@ -258,7 +271,7 @@ async def update_task(task_id: int, updated_task: UpdateTaskSchema, current_user
     
     return db_task
 
-@router.delete('/delete_task')
+@router.delete('/delete/task/{task_id}')
 async def delete_task(task_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")

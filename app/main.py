@@ -6,6 +6,7 @@ from .Administrator.router import router as admin_router
 from .manager.router import router as manager_router
 from .login import router as login_router
 from .workingtime.router import router as working_time_router
+import os
 app = FastAPI(title='Minzifa travel api')
 
 origins = ['*']
@@ -42,42 +43,51 @@ import asyncio
 
 @app.put('/{client_id}/change/manager/', name="Change Client's manager when time is over", tags=['Logic'])
 async def change_client_manager(client_id: int, db: Session = Depends(get_db)):
-    client = db.query(models.Lead).filter(models.Lead.id == client_id).first()
-    if not client:
+    lead = db.query(models.Lead).filter(models.Lead.id == client_id).first()
+    if not lead:
         raise HTTPException(status_code=404, detail="Client not found")
-    
-    current_manager = client.manager
 
-    new_manager =  db.query(models.User).filter_by(role="manager", language=client.language, status="Free").filter(models.User.id != current_manager.id).first()
-    better_manager = db.query(models.User).filter_by(role="manager", language=client.language, has_additional_client=False).order_by(desc(models.User.amount_finished_clients)).filter(models.User.id != current_manager.id).first()
+    current_manager = lead.manager
 
-    if new_manager:                # Присоединение пользователя к свободному менеджеру
-        client.manager = new_manager
-
-        for message in client.messages:
-            message.manager = new_manager
-
-        new_manager.status = "Busy"
+    if lead.language == 'ru':
+        available_manager = db.query(models.User).filter_by(department="Отдел продаж", language=lead.language, is_busy=False).first()
+        better_manager = db.query(models.User).filter_by(department="Отдел продаж", language=lead.language, has_additional_client=False).order_by(desc(models.User.amount_finished_clients)).first()
+        if not available_manager:
+            available_manager = db.query(models.User).filter_by(department="Отдел продаж", language="en", is_busy=False).first()
+        if not better_manager and not available_manager:
+            better_manager = db.query(models.User).filter_by(department="Отдел продаж", language="en", has_additional_client=False).order_by(desc(models.User.amount_finished_clients)).first()
+    else:
+        available_manager = db.query(models.User).filter_by(department="Отдел продаж", language=lead.language, is_busy=False).first()
+        better_manager = db.query(models.User).filter_by(department="Отдел продаж", language=lead.language, has_additional_client=False).order_by(desc(models.User.amount_finished_clients)).first()
+    if available_manager:
+        # Присоединение пользователя к свободному менеджеру
+        lead.manager_id = available_manager.id
+        available_manager.is_busy = True
         db.commit()
+
     elif better_manager:
-        client.manager = better_manager
-
-        for message in client.messages:
-            message.manager = better_manager
-
+        
+        lead.manager_id = better_manager.id
         better_manager.has_additional_client = True
         db.commit()
-    else:    
+
+    else:
         while True:
             await asyncio.sleep(5)
-            available_manager = db.query(models.User).filter_by(role="manager", language=client.language, status="Free").filter(models.User.id != current_manager.id).first()
+            available_manager = db.query(models.User).filter(models.User.id != current_manager.id).filter_by(department="Отдел продаж", language=lead.language, is_busy=False).first()
             if available_manager:
                 # Присоединение пользователя к свободному менеджеру
-                client.manager_id = available_manager.id
-                for message in client.messages:
-                    message.manager = available_manager
-                available_manager.status = "Busy"
+                lead.manager_id = available_manager.id
+
+                for message in lead.messages:
+                        message.manager = available_manager
+
+                for file in lead.files:
+                    file.manager = available_manager
+
+                available_manager.is_busy = True
                 db.commit()
+                
                 break
 
     return {"message": 'Менеджер у клиента поменян'}

@@ -24,6 +24,7 @@ from datetime import datetime
 # class ClientSchema(BaseModel):
 #     id: int
 #     full_name: str
+#     phone_number: str
 #     language: str
 #     source: str
 #     created_at: datetime
@@ -34,6 +35,19 @@ from datetime import datetime
 
 #     class Config:
 #         orm_mode = True
+class CreateClientSchema(BaseModel):
+    full_name: Optional[str]
+    phone_number: Optional[str]
+    email: Optional[str]
+    language: Optional[str]
+    source: Optional[str]
+class UpdateClientSchema(BaseModel):
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    email: Optional[str]
+    language: Optional[str] = None
+    source: Optional[str] = None
+    
 
 class ClientStatusChange(BaseModel):
     message: str
@@ -68,3 +82,4 @@ class ChangeOwnTaskSchema(BaseModel):
     time_deadline: Optional[str] = None
     date_deadline: Optional[str] = None
     priority: Optional[str] = None
+

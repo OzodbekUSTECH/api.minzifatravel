@@ -64,11 +64,12 @@ class Lead(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    chat_id = Column(Integer, index=True)
+    chat_id = Column(Integer, index=True, nullable=True)
     last_manager_update = Column(DateTime, default=datetime.utcnow, index=True)
 
     full_name = Column(String, index=True)
     phone_number = Column(String, nullable=True, index=True)
+    email = Column(String, index=True, nullable=True)
     language = Column(String)
 
     manager_id = Column(Integer, ForeignKey('users.id'))

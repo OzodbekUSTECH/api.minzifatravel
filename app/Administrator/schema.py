@@ -59,14 +59,15 @@ class MessageSchema(BaseModel):
 class ClientSchema(BaseModel):
     id: int
     full_name: str
-    phone_number: str
+    phone_number: Optional[str]
+    email: Optional[str]
     language: str
     source: str
-    created_at: datetime
+    created_at: Optional[datetime]
     status: str
-    last_update: datetime
+    last_update: Optional[datetime]
     description: str = None
-    chat: List[MessageSchema] # Поле chat теперь необязательное
+    chat: Optional[List[MessageSchema]] # Поле chat теперь необязательное
 
     class Config:
         orm_mode = True
