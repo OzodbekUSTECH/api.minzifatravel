@@ -277,15 +277,13 @@ async def send_file(client_id: int, file: UploadFile = File(...), current_user=D
 
     FILEPATH = "./static/files/"
     filename = file.filename
-    extension = filename.split('.')[1]
-    token_name = secrets.token_hex(10) + "." + extension
-    generated_name = FILEPATH + token_name
+    base_name, extension = os.path.splitext(filename)
+    generated_name = FILEPATH + filename
 
     counter = 1
     while os.path.exists(generated_name):
-        new_filename = f"{counter}_{filename}"
-        token_name = secrets.token_hex(10) + "_" + new_filename
-        generated_name = FILEPATH + token_name
+        new_filename = f"{base_name}_{counter}{extension}"
+        generated_name = FILEPATH + new_filename
         counter += 1
 
     file_content = await file.read()
@@ -320,6 +318,7 @@ async def send_file(client_id: int, file: UploadFile = File(...), current_user=D
 
     # Возвращаем успешный ответ
     return {"message": "File sent successfully"}
+
 
 
 
