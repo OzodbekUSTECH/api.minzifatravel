@@ -233,15 +233,21 @@ async def send_files(client_id: int, files: List[UploadFile] = File(...), curren
     FILEPATH = "./static/files/"
     for file in files:
         filename = file.filename
-        extension = filename.split('.')[1]
-        token_name = secrets.token_hex(10)+"."+extension
-        generated_name = FILEPATH + token_name
+        base_name, extension = os.path.splitext(filename)
+        generated_name = FILEPATH + filename
+
+        counter = 1
+        while os.path.exists(generated_name):
+            new_filename = f"{base_name}_{counter}{extension}"
+            generated_name = FILEPATH + new_filename
+            counter += 1
+
         file_content = await file.read()
 
-        with open(generated_name, 'wb') as file_obj:
-            file_obj.write(file_content)
+        with open(generated_name, 'wb') as file:
+            file.write(file_content)
 
-        file_obj.close()
+        file.close()
         file_url = "crm-ut.com" + generated_name[1:]
         db_file = models.File(
             filename=filename,
