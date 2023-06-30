@@ -269,15 +269,25 @@ async def send_files(client_id: int, files: List[UploadFile] = File(...), curren
     return {"message": "Сообщение отправлено успешно"}
 
 
+import os
+
 @router.post('/send_one_file/{client_id}', name='send one /videos/files')
-async def send_file(client_id: int, file: UploadFile = File(...),  current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def send_file(client_id: int, file: UploadFile = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
-    
+
     FILEPATH = "./static/files/"
     filename = file.filename
     extension = filename.split('.')[1]
-    token_name = secrets.token_hex(10)+"."+extension
+    token_name = secrets.token_hex(10) + "." + extension
     generated_name = FILEPATH + token_name
+
+    counter = 1
+    while os.path.exists(generated_name):
+        new_filename = f"{counter}_{filename}"
+        token_name = secrets.token_hex(10) + "_" + new_filename
+        generated_name = FILEPATH + token_name
+        counter += 1
+
     file_content = await file.read()
 
     with open(generated_name, 'wb') as file:
@@ -310,6 +320,7 @@ async def send_file(client_id: int, file: UploadFile = File(...),  current_user=
 
     # Возвращаем успешный ответ
     return {"message": "File sent successfully"}
+
 
 
 
