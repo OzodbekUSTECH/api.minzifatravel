@@ -170,58 +170,6 @@ async def send_message_msg(lead_id: int, msg: str, current_user=Depends(get_curr
     except Exception:
         return {"message": "Личка у пользователя закрыта или другая ошибка"}
 
-@router.post('/send_files_wtf/{client_id}', name='send files/photos/videos with/without caption(text)')
-async def send_message(client_id: int, msg: str = None, files: list[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == client_id).first()
-
-    media = []
-    
-    for i, file in enumerate(files):
-        file_data = await file.read()
-        file_stream = io.BytesIO(file_data)
-        file_stream.name = file.filename
-        #############################unique filenmaes #################
-        # unique_filename = str(uuid.uuid4())
-        # file_extension = os.path.splitext(file.filename)[1]
-        # media_path = os.path.join('D:\\ozod\\tgProject\\files', unique_filename + file_extension)
-        
-        # with open(media_path, 'wb') as f:
-        #     f.write(file_data)
-        # media.append(types.InputMediaDocument(media_path))
-        ################################################
-        media_path = os.path.join('/home/static/files', file.filename)
-        with open(media_path, 'wb') as f:
-            f.write(file_data)
-        media.append(types.InputMediaDocument(media_path))
-        db_file = models.File(
-            filename=file.filename,
-            filepath=media_path,
-            lead=client,
-            manager=current_user,
-        )
-        if i == len(files) - 1:
-            db_message = models.Message(
-                text=msg,
-                lead=client,
-                manager=current_user,
-                is_manager_message=True,
-                file=db_file  
-            )
-           
-        else:
-            db_message = models.Message(
-                text=None,
-                lead=client,
-                manager=current_user,
-                is_manager_message=True,
-                file=db_file  
-            )
-        db.add(db_message)
-        db.commit()
-    media[-1].caption = msg
-    await tgclient.send_media_group(chat_id=client.chat_id, media=media)
-    return {"message": "Сообщение отправлено успешно"}
-
 @router.post('/send_multiple_files/{lead_id}', name='send multiple files /videos/files at once')
 async def send_files(lead_id: int, files: List[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == lead_id).first()
@@ -230,18 +178,14 @@ async def send_files(lead_id: int, files: List[UploadFile] = File(...), current_
         filename = file.filename
         base_name, extension = os.path.splitext(filename)
         generated_name = FILEPATH + filename
-
         counter = 1
         while os.path.exists(generated_name):
             new_filename = f"{base_name}_{counter}{extension}"
             generated_name = FILEPATH + new_filename
             counter += 1
-
         file_content = await file.read()
-
         with open(generated_name, 'wb') as file:
             file.write(file_content)
-
         file.close()
         file_url = "crm-ut.com" + generated_name[1:]
         db_file = models.File(
@@ -257,7 +201,6 @@ async def send_files(lead_id: int, files: List[UploadFile] = File(...), current_
             is_manager_message=True,
             file=db_file
         )
-
         db.add(db_message)
         db.commit()
         file_url = "https://crm-ut.com" + generated_name[1:]
