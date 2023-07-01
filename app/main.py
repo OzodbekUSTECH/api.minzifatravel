@@ -46,9 +46,9 @@ from sqlalchemy import desc
 import asyncio
 
 
-@app.put('/{client_id}/change/manager/', name="Change Client's manager when time is over", tags=['Logic'])
-async def change_client_manager(client_id: int, db: Session = Depends(get_db)):
-    lead = db.query(models.Lead).filter(models.Lead.id == client_id).first()
+@app.put('/api/v1/change/manager/lead/{lead_id}', name="Change lead(client) manager when time is over", tags=['Logic'])
+async def change_client_manager(lead_id: int, db: Session = Depends(get_db)):
+    lead = db.query(models.Lead).filter(models.Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Client not found")
 

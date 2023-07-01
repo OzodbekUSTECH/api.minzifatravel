@@ -10,7 +10,7 @@ from .schema import *
 
 
 router = APIRouter(
-    prefix='/workingtime',
+    prefix='/api/v1/workingtime',
     tags = ['Working Time'],
     dependencies=[Depends(get_current_user)],
 )
