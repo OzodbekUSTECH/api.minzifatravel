@@ -6,6 +6,8 @@ from .Administrator.router import router as admin_router
 from .manager.router import router as manager_router
 from .login import router as login_router
 from .workingtime.router import router as working_time_router
+from .task.router import router as task_router
+from .profile.router import router as profile_router
 import os
 app = FastAPI(title='Minzifa travel api')
 
@@ -21,9 +23,12 @@ app.add_middleware(
 
 
 app.include_router(login_router)
+app.include_router(profile_router)
 app.include_router(admin_router)
 app.include_router(manager_router)
 app.include_router(working_time_router)
+app.include_router(task_router)
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -116,43 +121,3 @@ async def register(user: UserCreateSchema, db: Session = Depends(get_db)):
 
     return db_user
 
-
-
-
-
-############avatar
-from fastapi import File, UploadFile
-import secrets
-from fastapi.staticfiles import StaticFiles
-from PIL import Image
-from fastapi.responses import FileResponse
-
-app.mount('/static', StaticFiles(directory='static'), name='static')
-FILEPATH = "./static/images/"
-@app.post('/upload/profile/image')
-async def create_profile_image(file: UploadFile = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    
-    filename = file.filename
-
-    extension = filename.split('.')[1]
-
-    if extension not in ['jpg', 'jpeg', 'png']:
-        raise HTTPException(status_code=400, detail="Неверный формат файла")
-    token_name = secrets.token_hex(10)+"."+extension
-    generated_name = FILEPATH + token_name
-    file_content = await file.read()
-
-    with open(generated_name, 'wb') as file:
-        file.write(file_content)
-
-    img = Image.open(generated_name)
-    img = img.resize(size=(45, 45))
-    img.save(generated_name)
-
-    file.close()
-
-    file_url = "crm-ut.com" + generated_name[1:]
-    current_user.avatar = file_url
-    db.commit()
-
-    return {"message": 'Аватар успешно изменен'}

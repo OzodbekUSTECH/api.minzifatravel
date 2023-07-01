@@ -6,40 +6,12 @@ from app.utils import *
 from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(
-    prefix='/administrator',
+    prefix='/api/v1/administrator',
     tags = ['Administrator'],
     dependencies=[Depends(get_current_user)]
 )
 
-
-
-
-@router.post('/registration', summary="Create a new user", response_model=RegUserSchemaResponse)
-async def register(user: UserCreateSchema,current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.department != "Отдел управления":
-        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
-
-    hashed_password = pwd_context.hash(user.password)
-    db_user = models.User(
-        full_name=user.full_name,
-        email=user.email,
-        department=user.department,
-        role=user.role,
-        language=user.language
-    )
-    db_user.password = hashed_password
-    try:
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-    except IntegrityError:
-        raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует.")
-
-    return db_user
-
-
-
-@router.get('/get_all_staff', name="get list of staff with their clients and full chats(except yourself)", response_model=list[UserSchema])
+@router.get('/users', name="get list of users with their clients and full chats(except yourself)", response_model=list[UserSchema])
 async def get_all_staff(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
@@ -97,7 +69,8 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
     return response
 
 
-@router.get('/get_user/{user_id}', name='get any user by id', response_model = UserSchema)
+
+@router.get('/user/{user_id}', name='get any user by id', response_model = UserSchema)
 async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
@@ -152,25 +125,37 @@ async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), d
         )
     return user_data
 
-@router.delete('/delte/lead/{lead_id}')
-async def delete_lead(lead_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+
+@router.post('/user', summary="Create a new user", response_model=RegUserSchemaResponse)
+async def register(user: UserCreateSchema,current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
-    lead = db.query(models.Lead).filter(models.Lead.id == lead_id).first()
-    if not lead:
-        raise HTTPException(status_code=404, detail="Лид не найден.")
-    db.delete(lead)
-    db.commit()
 
-    return {"message": "Лид успешно удален!"}
+    hashed_password = pwd_context.hash(user.password)
+    db_user = models.User(
+        full_name=user.full_name,
+        email=user.email,
+        department=user.department,
+        role=user.role,
+        language=user.language
+    )
+    db_user.password = hashed_password
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует.")
+
+    return db_user
 
 
-@router.put('/change/{manager_id}/data', response_model=RegUserSchemaResponse)
-async def change_user_data(manager_id: int, user: UserUpdateSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+@router.put('/user/{user_id}', name='update user data', response_model=RegUserSchemaResponse)
+async def change_user_data(user_id: int, user: UserUpdateSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
     
-    user_update = db.query(models.User).filter(models.User.id == manager_id).first()
+    user_update = db.query(models.User).filter(models.User.id == user_id).first()
 
     if user.full_name is not None:
         user_update.full_name = user.full_name
@@ -188,12 +173,15 @@ async def change_user_data(manager_id: int, user: UserUpdateSchema, current_user
     db.refresh(user_update)
     return user_update
 
-@router.put('/change/{manager_id}/password')
-async def change_user_password(manager_id: int, user: UserUpdatePasswordSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+
+
+
+@router.put('/user/{user_id}/password', name = "chagne password of user")
+async def change_user_password(user_id: int, user: UserUpdatePasswordSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
     
-    user_update = db.query(models.User).filter(models.User.id == manager_id).first()
+    user_update = db.query(models.User).filter(models.User.id == user_id).first()
     if verify_password(user.old_password, user_update.password):
         new_hashed_password = pwd_context.hash(user.new_password)
         user_update.password = new_hashed_password
@@ -202,7 +190,8 @@ async def change_user_password(manager_id: int, user: UserUpdatePasswordSchema, 
     else:
         raise HTTPException(status_code=400, detail="Неверный пароль")
 
-@router.delete('/delete/{user_id}')
+
+@router.delete('/user/{user_id}', name = "delete an user")
 async def delete_user(user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
@@ -212,16 +201,17 @@ async def delete_user(user_id: int, current_user=Depends(get_current_user), db: 
     db.delete(user)
     db.commit()
     return {"message": "Пользователь удален!"}
+#######################tasks################
 
-@router.get('/get_all_tasks', response_model=List[TaskSchema])
+@router.get('/tasks', name='get all tasks that have been assigned to someone', response_model=List[TaskSchema])
 async def get_all_tasks(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
-    all_tasks = db.query(models.Task).order_by(models.Task.id).all()
+    all_tasks = db.query(models.Task).filter(models.Task.assigned_to_id != None).order_by(models.Task.id).all()
     return all_tasks
 
 
-@router.post('/create_task', response_model=TaskSchema)
+@router.post('/task', name='Create a task only to someone', response_model=TaskSchema)
 async def create_task(task: CreateTaskSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
@@ -241,7 +231,29 @@ async def create_task(task: CreateTaskSchema, current_user=Depends(get_current_u
     db.commit()
     return db_task
 
-@router.put('/update_task/{task_id}', response_model=TaskSchema)
+@router.get('/tasks/{user_id}', name='get tasks of user that are assigned to', summary='Прикрепленные задачи этого юзера от директоров',  response_model=list[TaskSchema])
+async def get_tasks_of_user(user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден.")
+    all_tasks = db.query(models.Task).filter(models.Task.assigned_to_id == user_id).order_by(models.Task.id).all()
+    return all_tasks
+
+@router.get('/task/{task_id}', name='get task by id', response_model=TaskSchema)
+async def get_task_by_id(task_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Задача не найдена.")
+    return task
+
+
+
+
+@router.put('/task/{task_id}', name='update task data', response_model=TaskSchema)
 async def update_task(task_id: int, updated_task: UpdateTaskSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
@@ -271,11 +283,11 @@ async def update_task(task_id: int, updated_task: UpdateTaskSchema, current_user
     
     return db_task
 
-@router.delete('/delete/task/{task_id}')
+@router.delete('/task/{task_id}', name='delete an assigned task')
 async def delete_task(task_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
-    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    db_task = db.query(models.Task).filter(models.Task.id == task_id, models.Task.assigned_to_id != None).first()
     if db_task:
         db.delete(db_task)
         db.commit()
@@ -286,32 +298,14 @@ async def delete_task(task_id: int, current_user=Depends(get_current_user), db: 
 
 from app.workingtime.schema import *
 #working times of managers
-@router.get("/workingtime/dates_all", name='get all dates and their staff with working time', response_model=list[WorkDateSchema])
+
+@router.get("/workingtime/dates", name='get workingtimes of users', response_model=list[AllWorkTimeSchema])
 def get_all_users_by_dates(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
-    users = db.query(models.WorkTime).order_by(models.WorkTime.date, models.WorkTime.staff_id).all()
+    users = db.query(models.WorkTime).order_by('id').all()
 
-    result = {}
-    for user in users:
-        date_str = user.date  
-
-        user_data = WorkTimeSchema(
-            id=user.staff.id,
-            full_name=user.staff.full_name,
-            start_time=user.start_time,
-            end_time=user.end_time,
-        )
-        if date_str in result:
-            result[date_str].append(user_data)
-        else:
-            result[date_str] = [user_data]
-    
-    response = []
-    for date_str, staff in result.items():
-        date_data = WorkDateSchema(date=date_str, staff=staff)
-        response.append(date_data)
-    return response
+    return users
 
 
 @router.get("/workingtime/dates/{date}", name='get all staff with working time for a specific date', response_model=List[AllWorkTimeSchema])
@@ -320,22 +314,10 @@ def get_all_users_by_date(date: date, current_user=Depends(get_current_user), db
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
     users = db.query(models.WorkTime).filter(models.WorkTime.date == date).order_by(models.WorkTime.id).all()
 
-    response = []
-    for user in users:
-        user_data = AllWorkTimeSchema(
-            id=user.id,
-            staff_id=user.staff.id,
-            full_name=user.staff.full_name,
-            date=user.date,
-            start_time=user.start_time,
-            end_time=user.end_time
-        )
-        response.append(user_data)
-
-    return response
+    return users
 
 @router.get("/workingtime/range/dates", name='get all staff with working time for a range of dates', response_model=List[AllWorkTimeSchema])
-def get_all_users_by_range(start_date: date, end_date: Optional[date] = None,current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_all_users_by_range(start_date: date, end_date: Optional[date] = None,current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
     query = db.query(models.WorkTime).filter(models.WorkTime.date >= start_date)
@@ -349,7 +331,6 @@ def get_all_users_by_range(start_date: date, end_date: Optional[date] = None,cur
         user_data = AllWorkTimeSchema(
             id=user.id,
             staff_id=user.staff.id,
-            full_name=user.staff.full_name,
             date=user.date,
             start_time=user.start_time,
             end_time=user.end_time
@@ -357,15 +338,14 @@ def get_all_users_by_range(start_date: date, end_date: Optional[date] = None,cur
         response.append(user_data)
 
     return response
-
-@router.put('/{client_id}/change/{manager_id}')
-async def change_manager(client_id: int, manager_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+@router.put('/{lead_id}/change/{user_id}', name = 'change manager of lead')
+async def change_manager(lead_id: int, user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
-    db_client = db.query(models.Lead).filter(models.Lead.id == client_id).first()
+    db_client = db.query(models.Lead).filter(models.Lead.id == lead_id).first()
     if not db_client:
         raise HTTPException(status_code=404, detail="Клиент не найден.")
-    new_manager = db.query(models.User).filter(models.User.id == manager_id).first()
+    new_manager = db.query(models.User).filter(models.User.id == user_id).first()
 
     db_client.manager = new_manager
     for message in db_client.messages:
@@ -375,10 +355,19 @@ async def change_manager(client_id: int, manager_id: int, current_user=Depends(g
 
     return {"message": "Менеджер у клиент сменен"}
 
-
-
-
-
 ####################################avatar
 
+
+
+@router.delete('/lead/{lead_id}', name='delete lead(client)')
+async def delete_lead(lead_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+    lead = db.query(models.Lead).filter(models.Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Лид не найден.")
+    db.delete(lead)
+    db.commit()
+
+    return {"message": "Лид успешно удален!"}
 
