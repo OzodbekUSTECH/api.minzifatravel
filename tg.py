@@ -148,8 +148,8 @@ async def handle_private_message(client: Client, message: TelegramMessage):
                         # Присоединение пользователя к свободному менеджеру
                         lead.manager_id = available_manager.id
 
-                        for message in lead.messages:
-                             message.manager = available_manager
+                        for msg in lead.messages:
+                             msg.manager = available_manager
 
                         for file in lead.files:
                             file.manager = available_manager

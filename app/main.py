@@ -8,6 +8,7 @@ from .login import router as login_router
 from .workingtime.router import router as working_time_router
 from .task.router import router as task_router
 from .profile.router import router as profile_router
+from .mail.router import router as mail_router
 import os
 app = FastAPI(title='Minzifa travel api')
 
@@ -28,6 +29,7 @@ app.include_router(admin_router)
 app.include_router(manager_router)
 app.include_router(working_time_router)
 app.include_router(task_router)
+app.include_router(mail_router)
 
 
 @app.on_event("startup")
