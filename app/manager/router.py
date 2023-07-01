@@ -19,7 +19,7 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)]
 )
 
-
+router.mount('/static', StaticFiles(directory='static'), name='static')
 @router.get('/leads', name='get own leads(clients) with a full chat', response_model=list[ClientSchema])
 async def get_own_clients(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     clients = db.query(models.Lead).filter(models.Lead.manager == current_user).all()
@@ -222,7 +222,7 @@ async def send_files(lead_id: int, files: List[UploadFile] = File(...), current_
 
 import os
 
-router.mount('/static', StaticFiles(directory='static'), name='static')
+
 @router.post('/send_file/{lead_id}', name='send only one /videos/files')
 async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == lead_id).first()
