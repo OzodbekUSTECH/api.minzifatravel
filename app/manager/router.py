@@ -173,8 +173,9 @@ async def send_message_msg(lead_id: int, msg: str, current_user=Depends(get_curr
 @router.post('/send_multiple_files/{lead_id}', name='send multiple files /videos/files at once')
 async def send_files(lead_id: int, files: List[UploadFile] = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == lead_id).first()
-    FILEPATH = "./static/files/"
+   
     for file in files:
+        FILEPATH = "./static/files/"
         filename = file.filename
         base_name, extension = os.path.splitext(filename)
         generated_name = FILEPATH + filename
