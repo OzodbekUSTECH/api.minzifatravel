@@ -228,18 +228,16 @@ async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Dep
 
     FILEPATH = "./static/files/"
     filename = file.filename
-    extension = filename.split('.')[1]
-    token_name = secrets.token_hex(10)+"."+extension
-    generated_name = FILEPATH + token_name
+    generated_name = FILEPATH + filename
     file_content = await file.read()
 
-    with open(generated_name, 'wb') as file:
-        file.write(file_content)
+    with open(generated_name, 'wb') as f:
+        f.write(file_content)
 
     file.close()
     file_url = "crm-ut.com" + generated_name[1:]
     db_file = models.File(
-        filename=filename,
+        filename=file.filename,
         filepath=file_url,
         lead=client,
         manager=current_user
@@ -251,6 +249,7 @@ async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Dep
         is_manager_message=True,
         file=db_file
     )
+
     db.add(db_message)
     db.commit()
     file_url = "https://crm-ut.com" + generated_name[1:]
@@ -259,6 +258,7 @@ async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Dep
         chat_id=client.chat_id,
         document=file_url
     )
+
     # Возвращаем успешный ответ
     return {"message": "File sent successfully"}
 
