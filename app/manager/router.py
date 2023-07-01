@@ -237,10 +237,10 @@ async def send_file(client_id: int, file: UploadFile = File(...),  current_user=
 
     counter = 1
     while os.path.exists(generated_name):
-        new_filename = FILEPATH + filename_without_extension+"-"+counter+"."+extension
+        new_filename = filename_without_extension+"-"+counter+"."+extension
         generated_name = FILEPATH + new_filename
         counter += 1
-        
+
     file_content = await file.read()
 
     with open(generated_name, 'wb') as f:
