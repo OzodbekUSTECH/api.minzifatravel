@@ -247,7 +247,7 @@ async def send_file(client_id: int, file: UploadFile = File(...),  current_user=
         f.write(file_content)
 
     file.close()
-    file_url = "crm-ut.com" + generated_name[1:]
+    file_url = "crm-ut.com" + generated_name
     db_file = models.File(
         filename=file.filename,
         filepath=file_url,
@@ -264,7 +264,7 @@ async def send_file(client_id: int, file: UploadFile = File(...),  current_user=
 
     db.add(db_message)
     db.commit()
-    file_url = "https://crm-ut.com" + generated_name[1:]
+    file_url = "https://crm-ut.com" + generated_name
     # Отправка документа с использованием Pyrogram
     await tgclient.send_document(
         chat_id=client.chat_id,
