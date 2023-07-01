@@ -150,25 +150,25 @@ async def update_manager_status_free(current_user=Depends(get_current_user), db:
 @router.post('/send_message/{lead_id}', name="Send message to a lead")
 async def send_message_msg(lead_id: int, msg: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     client = db.query(models.Lead).filter(models.Lead.manager == current_user, models.Lead.id == lead_id).first()
-    try:
-        if client.chat_id:
-            await tgclient.send_message(chat_id=client.chat_id, text=msg)
-        else:
-            await tgclient.send_message(chat_id=client.phone_number, text=msg)
+    # try:
+    if client.chat_id:
+        await tgclient.send_message(chat_id=client.chat_id, text=msg)
+    else:
+        await tgclient.send_message(chat_id=client.phone_number, text=msg)
 
-        db_message = models.Message(
-            text=msg,
-            lead=client,
-            manager=current_user,
-            is_manager_message = True
-        )
-        db.add(db_message)
-        db.commit()
-        db.refresh(db_message)
-    
-        return {"message": "Сообщение отправлено успешно"}
-    except Exception:
-        return {"message": "Личка у пользователя закрыта"}
+    db_message = models.Message(
+        text=msg,
+        lead=client,
+        manager=current_user,
+        is_manager_message = True
+    )
+    db.add(db_message)
+    db.commit()
+    db.refresh(db_message)
+
+    return {"message": "Сообщение отправлено успешно"}
+    # except Exception:
+    #     return {"message": "Личка у пользователя закрыта"}
 
 
 
@@ -228,24 +228,16 @@ async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Dep
 
     FILEPATH = "./static/files/"
     filename = file.filename
-    base_name, extension = os.path.splitext(filename)
     generated_name = FILEPATH + filename
-
-    counter = 1
-    while os.path.exists(generated_name):
-        new_filename = f"{base_name}_{counter}{extension}"
-        generated_name = FILEPATH + new_filename
-        counter += 1
-
     file_content = await file.read()
 
-    with open(generated_name, 'wb') as file:
-        file.write(file_content)
+    with open(generated_name, 'wb') as f:
+        f.write(file_content)
 
     file.close()
     file_url = "crm-ut.com" + generated_name[1:]
     db_file = models.File(
-        filename=filename,
+        filename=file.filename,
         filepath=file_url,
         lead=client,
         manager=current_user
@@ -260,16 +252,16 @@ async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Dep
 
     db.add(db_message)
     db.commit()
-    file_url = "https://crm-ut.com" + generated_name[1:]
+
     # Отправка документа с использованием Pyrogram
     await tgclient.send_document(
         chat_id=client.chat_id,
-        document=file_url
+        document=generated_name,
+        caption=file.filename  # Используйте оригинальное имя файла в качестве заголовка
     )
 
     # Возвращаем успешный ответ
     return {"message": "File sent successfully"}
-
 
 
 
