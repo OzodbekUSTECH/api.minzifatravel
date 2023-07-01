@@ -228,16 +228,24 @@ async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Dep
 
     FILEPATH = "./static/files/"
     filename = file.filename
+    extension = filename.split('.')[1]
     generated_name = FILEPATH + filename
     file_content = await file.read()
+    counter = 1
+    while os.path.exists(generated_name):
+        new_filename = f"{filename}_{counter}.{extension}"
+        generated_name = FILEPATH + new_filename
+        counter += 1
 
-    with open(generated_name, 'wb') as f:
-        f.write(file_content)
+    
+
+    with open(generated_name, 'wb') as file:
+        file.write(file_content)
 
     file.close()
     file_url = "crm-ut.com" + generated_name[1:]
     db_file = models.File(
-        filename=file.filename,
+        filename=filename,
         filepath=file_url,
         lead=client,
         manager=current_user
@@ -261,6 +269,7 @@ async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Dep
 
     # Возвращаем успешный ответ
     return {"message": "File sent successfully"}
+
 
 
 
