@@ -228,16 +228,16 @@ async def send_file(lead_id: int, file: UploadFile = File(...), current_user=Dep
 
     FILEPATH = "./static/files/"
     filename = file.filename
-    extension = filename.split('.')[1]
+    base_name, extension = os.path.splitext(filename)
     generated_name = FILEPATH + filename
-    file_content = await file.read()
+
     counter = 1
     while os.path.exists(generated_name):
-        new_filename = f"{filename}_{counter}.{extension}"
+        new_filename = base_name+"-"+"."+extension
         generated_name = FILEPATH + new_filename
         counter += 1
 
-    
+    file_content = await file.read()
 
     with open(generated_name, 'wb') as file:
         file.write(file_content)
