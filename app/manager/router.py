@@ -189,7 +189,7 @@ async def send_message(client_id: int, msg: str = None, files: list[UploadFile] 
         #     f.write(file_data)
         # media.append(types.InputMediaDocument(media_path))
         ################################################
-        media_path = os.path.join('D:\\ozod\\tgProject\\files', file.filename)
+        media_path = os.path.join('/home/static/files', file.filename)
         with open(media_path, 'wb') as f:
             f.write(file_data)
         media.append(types.InputMediaDocument(media_path))
