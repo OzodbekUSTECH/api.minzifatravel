@@ -229,19 +229,16 @@ async def send_file(client_id: int, file: UploadFile = File(...),  current_user=
 
     FILEPATH = "./static/files/"
     filename = file.filename
-
-    extension = filename.split('.')[1]
-    token_name = secrets.token_hex(10)+"."+extension
-    generated_name = FILEPATH + token_name
+    generated_name = FILEPATH + filename
     file_content = await file.read()
 
-    with open(generated_name, 'wb') as file:
-        file.write(file_content)
+    with open(generated_name, 'wb') as f:
+        f.write(file_content)
 
     file.close()
     file_url = "crm-ut.com" + generated_name[1:]
     db_file = models.File(
-        filename=filename,
+        filename=file.filename,
         filepath=file_url,
         lead=client,
         manager=current_user
