@@ -14,7 +14,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from pydantic import EmailStr, BaseModel
 from typing import List
 from .schema import *
-
+from fastapi import BackgroundTasks
 
 conf = ConnectionConfig(
     MAIL_USERNAME = "naimovozod81@gmail.com",
@@ -32,12 +32,12 @@ conf = ConnectionConfig(
 
 router = APIRouter(
     prefix='/api/v1/mail',
-    tags = ['Gmail'],
+    tags = ['Sender'],
     dependencies=[Depends(get_current_user)]
 )
 
-@router.post("/send/message")
-async def simple_send(email: EmailSchema, current_user= Depends(get_current_user),db: Session = Depends(get_db) ) -> JSONResponse:
+@router.post("/send/message/mail")
+async def simple_send(background_tasks: BackgroundTasks, email: EmailSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)) -> JSONResponse:
     db_leads = db.query(models.Lead).filter(models.Lead.email != None).all()
     
     html = email.message
@@ -50,22 +50,32 @@ async def simple_send(email: EmailSchema, current_user= Depends(get_current_user
             subtype=MessageType.html)
 
         fm = FastMail(conf)
-        await fm.send_message(message)
+        background_tasks.add_task(fm.send_message, message)
 
     return JSONResponse(status_code=200, content={"message": "Email has been sent to multiple recipients."})
 
-from fastapi import BackgroundTasks
 from pyrogram.errors import PeerIdInvalid
-@router.post('/send_message/everyone', name="Send message to everyone")
-async def send_message_msg(background_tasks: BackgroundTasks, msg: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+@router.post('/send_message/telegram', name="Send message to everyone")
+async def send_message_msg(msg: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     clients = db.query(models.Lead).all()
+    failed_clients = []  # список для хранения неудачных отправок
+
     for client in clients:
         try:
             if client.chat_id:
-                background_tasks.add_task(tgclient.send_message, chat_id=client.chat_id, text=msg)
+                result = await tgclient.send_message(chat_id=client.chat_id, text=msg)
+                if not result:
+                    failed_clients.append(client.id)  # добавляем ID клиента в список неудачных отправок
+            elif client.phone_number:
+                result = await tgclient.send_message(chat_id=client.phone_number, text=msg)
+                if not result:
+                    failed_clients.append(client.id)  # добавляем ID клиента в список неудачных отправок
             else:
-                background_tasks.add_task(tgclient.send_message, chat_id=client.phone_number, text=msg)
-        except:
-            continue
+                failed_clients.append(client.id)  # добавляем ID клиента в список неудачных отправок
+        except PeerIdInvalid:
+            failed_clients.append(client.id)  # добавляем ID клиента в список неудачных отправок
 
-    return {"message": "Сообщение отправлено"}
+    if failed_clients:
+        return {"message": "Сообщение отправлено, но не удалось доставить некоторым пользователям", "failed_clients": failed_clients}
+    else:
+        return {"message": "Сообщение успешно отправлено"}
