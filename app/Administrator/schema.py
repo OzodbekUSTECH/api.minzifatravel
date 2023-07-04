@@ -50,6 +50,8 @@ class FileSchema(BaseModel):
 
 class MessageSchema(BaseModel):
     id: int
+    manager_id: int
+    lead_id: int
     text: str = None
     is_manager_message: bool
     time: datetime
@@ -85,7 +87,7 @@ class UserSchema(BaseModel):
     language: str
     is_busy: bool
     amount_finished_clients:Optional[int]
-    clients: List[ClientSchema]
+    created_at: datetime
 
     class Config:
         orm_mode = True
@@ -156,7 +158,6 @@ class LeadSchema(BaseModel):
     status: str
     last_update: Optional[datetime]
     description: str = None
-    chat: Optional[List[MessageSchema]]
 
     class Config:
         orm_mode = True

@@ -39,7 +39,7 @@ class User(Base):
     full_name = Column(String, index=True)
     department = Column(String,  nullable=True, index=True) # Отдел продаж, Отдел бронирования, Отдел управления
     role = Column(String, nullable=True) #менеджер, Директор
-
+    created_at = Column(DateTime, default=datetime.utcnow)
     # If it's a manager
     language = Column(String, nullable=True)
     # status = Column(String, default='Работаю', index=True)

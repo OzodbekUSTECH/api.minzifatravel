@@ -11,103 +11,99 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)]
 )
 
-@router.get('/users', name="get list of users with their clients and full chats(except yourself)", response_model=list[UserSchema])
-async def get_all_staff(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+
+@router.get('/users/', name="get all users by a range of date and page", response_model=list[UserSchema])
+async def get_all_users(date_from: date = None, date_to: date = None, page: int = 1, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
 
-    all_staff = db.query(models.User).filter(models.User.id != current_user.id).order_by('id').all()
+    if date_from is None:
+        date_from = datetime.combine(date.today(), datetime.min.time())
+    if date_to is None:
+        date_to = datetime.combine(date.today(), datetime.max.time())
+
+    all_users = db.query(models.User).filter(models.User.created_at.between(date_from, date_to)).order_by('id').all()
+
+    leads_per_page = 100
+    start_index = (page - 1) * leads_per_page
+    end_index = start_index + leads_per_page
+    paginated_users = all_users[start_index:end_index]
+
+    return paginated_users
+
+
+
+@router.get('/leads/', name="get all leads by a range of date and page", response_model=list[LeadSchema])
+async def get_all_leads(date_from: date = None, date_to: date = None, page: int = 1, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+
+    if date_from is None:
+        date_from = datetime.combine(date.today(), datetime.min.time())
+    if date_to is None:
+        date_to = datetime.combine(date.today(), datetime.max.time())
+
+
+    all_leads = db.query(models.Lead).filter(models.Lead.created_at.between(date_from, date_to)).order_by(models.Lead.id).all()
+
+    leads_per_page = 100
+    start_index = (page - 1) * leads_per_page
+    end_index = start_index + leads_per_page
+    paginated_leads = all_leads[start_index:end_index]
+
     response = []
-    for staff in all_staff:
-        clients = []
-        for client in staff.clients:
-            messages_response = []
-            for message in client.messages:
-                file_data = None
-                if message.file:
-                    file_data = FileSchema(
-                        id=message.file.id,
-                        file_name=message.file.filename,
-                        file_path=message.file.filepath
-                    )
-                message_data = MessageSchema(
-                    id=message.id,
-                    text=message.text,
-                    is_manager_message=message.is_manager_message,
-                    time=message.timestamp,
-                    file = file_data
-                )
-                messages_response.append(message_data)
-            client_data = ClientSchema(
-                id=client.id,
-                manager_id = client.manager_id,
-                full_name=client.full_name,
-                phone_number=client.phone_number,
-                email=client.email,
-                language=client.language,
-                source=client.source,
-                created_at=client.created_at,
-                status=client.status,
-                last_update=client.last_manager_update,
-                description=client.description,
-                chat = messages_response
-            )
-            clients.append(client_data)
-
-        staff_data = UserSchema(
-            id=staff.id,
-            full_name=staff.full_name,
-            email=staff.email,
-            department=staff.department,
-            role=staff.role,
-            language=staff.language,
-            is_busy=staff.is_busy,
-            amount_finished_clients=staff.amount_finished_clients,
-            clients=clients 
+    for lead in paginated_leads:
+        lead_data = LeadSchema(
+            id=lead.id,
+            manager_id=lead.manager_id,
+            full_name=lead.full_name,
+            phone_number=lead.phone_number,
+            email=lead.email,
+            language=lead.language,
+            source=lead.source,
+            created_at=lead.created_at,
+            status=lead.status,
+            last_update=lead.last_manager_update,
+            description=lead.description,
         )
-        response.append(staff_data)
-
+        response.append(lead_data)
     return response
-# @router.get('/leads', name="get all leads", response_model=list[LeadSchema])
-# async def get_all_leads(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-#     if current_user.department != "Отдел управления":
-#         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
-#     all_leads = db.query(models.Lead).order_by('id').all()
-#     response = []
-#     for lead in all_leads:
-#         messages_response = []
-#         for message in lead.messages:
-#             file_data = None
-#             if message.file:
-#                 file_data = FileSchema(
-#                     id=message.file.id,
-#                     file_name=message.file.filename,
-#                     file_path=message.file.filepath
-#                 )
-#             message_data = MessageSchema(
-#                 id=message.id,
-#                 text=message.text,
-#                 is_manager_message=message.is_manager_message,
-#                 time=message.timestamp,
-#                 file = file_data
-#             )
-#             messages_response.append(message_data)
-#         lead = LeadSchema(
-#             id=lead.id,
-#             manager_id = lead.manager_id,
-#             full_name=lead.full_name,
-#             phone_number=lead.phone_number,
-#             email=lead.email,
-#             language=lead.language,
-#             source=lead.source,
-#             created_at=lead.created_at,
-#             status=lead.status,
-#             last_update=lead.last_manager_update,
-#             description=lead.description,
-#             chat = messages_response
-#         )
-#         response.append(lead)
-#     return response
+
+@router.get('/chats/', name="get all chats by a range of date and page", response_model=list[LeadSchema])
+async def get_all_leads(page: int = 1, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.department != "Отдел управления":
+        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+
+    if date_from is None:
+        date_from = datetime.combine(date.today(), datetime.min.time())
+    if date_to is None:
+        date_to = datetime.combine(date.today(), datetime.max.time())
+
+
+    all_leads = db.query(models.Lead).filter(models.Lead.created_at.between(date_from, date_to)).order_by(models.Lead.id).all()
+
+    leads_per_page = 100
+    start_index = (page - 1) * leads_per_page
+    end_index = start_index + leads_per_page
+    paginated_leads = all_leads[start_index:end_index]
+
+    response = []
+    for lead in paginated_leads:
+        lead_data = LeadSchema(
+            id=lead.id,
+            manager_id=lead.manager_id,
+            full_name=lead.full_name,
+            phone_number=lead.phone_number,
+            email=lead.email,
+            language=lead.language,
+            source=lead.source,
+            created_at=lead.created_at,
+            status=lead.status,
+            last_update=lead.last_manager_update,
+            description=lead.description,
+        )
+        response.append(lead_data)
+    return response
 
 @router.get('/user/{user_id}', name='get any user by id', response_model = UserSchema)
 async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
