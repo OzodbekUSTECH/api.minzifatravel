@@ -42,8 +42,9 @@ class RegUserSchemaResponse(BaseModel):
 ################################################################
 class FileSchema(BaseModel):
     id: int
-    file_name: str
-    file_path: str
+    filename: str
+    filepath: str
+    timestamp: datetime
 
     class Config:
         orm_mode = True
@@ -148,11 +149,11 @@ class UpdateTaskSchema(BaseModel):
 
 class LeadSchema(BaseModel):
     id: int
-    manager_id: Optional[int]
+    manager_id: int
     full_name: str
     phone_number: Optional[str]
     email: Optional[str]
-    language: str
+    language: Optional[str]
     source: Optional[str]
     created_at: Optional[datetime]
     status: str
@@ -161,3 +162,4 @@ class LeadSchema(BaseModel):
 
     class Config:
         orm_mode = True
+        

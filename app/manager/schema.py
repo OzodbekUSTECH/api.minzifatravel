@@ -2,19 +2,6 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 from typing import List
-class FileSchema(BaseModel):
-    id: int
-    file_name: str
-    file_path: str
-class MessageSchema(BaseModel):
-    id: int
-    text: str = None
-    is_manager_message: bool
-    time: datetime
-    file: FileSchema = None
-
-    class Config:
-        orm_mode = True
 
 
 # class FileSchema(BaseModel):

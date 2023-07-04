@@ -65,7 +65,7 @@ class Lead(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     chat_id = Column(Integer, index=True, nullable=True)
-    last_manager_update = Column(DateTime, default=datetime.utcnow, index=True)
+    last_update = Column(DateTime, default=datetime.utcnow, index=True)
 
     full_name = Column(String, index=True)
     phone_number = Column(String, nullable=True, index=True)
@@ -77,7 +77,7 @@ class Lead(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    source = Column(String)  # WhatsApp/Tg/Insta/Web
+    source = Column(String, nullable=True)  # WhatsApp/Tg/Insta/Web
     status = Column(String, default="Приветствие") 
     description = Column(String, nullable=True)
     
