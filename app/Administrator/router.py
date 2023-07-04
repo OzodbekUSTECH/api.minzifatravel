@@ -68,46 +68,46 @@ async def get_all_staff(current_user=Depends(get_current_user), db: Session = De
         response.append(staff_data)
 
     return response
-@router.get('/leads', name="get all leads", response_model=list[LeadSchema])
-async def get_all_leads(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.department != "Отдел управления":
-        raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
-    all_leads = db.query(models.Lead).order_by('id').all()
-    response = []
-    for lead in all_leads:
-        messages_response = []
-        for message in lead.messages:
-            file_data = None
-            if message.file:
-                file_data = FileSchema(
-                    id=message.file.id,
-                    file_name=message.file.filename,
-                    file_path=message.file.filepath
-                )
-            message_data = MessageSchema(
-                id=message.id,
-                text=message.text,
-                is_manager_message=message.is_manager_message,
-                time=message.timestamp,
-                file = file_data
-            )
-            messages_response.append(message_data)
-        lead = LeadSchema(
-            id=lead.id,
-            manager_id = lead.manager_id,
-            full_name=lead.full_name,
-            phone_number=lead.phone_number,
-            email=lead.email,
-            language=lead.language,
-            source=lead.source,
-            created_at=lead.created_at,
-            status=lead.status,
-            last_update=lead.last_manager_update,
-            description=lead.description,
-            chat = messages_response
-        )
-        response.append(lead)
-    return response
+# @router.get('/leads', name="get all leads", response_model=list[LeadSchema])
+# async def get_all_leads(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+#     if current_user.department != "Отдел управления":
+#         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
+#     all_leads = db.query(models.Lead).order_by('id').all()
+#     response = []
+#     for lead in all_leads:
+#         messages_response = []
+#         for message in lead.messages:
+#             file_data = None
+#             if message.file:
+#                 file_data = FileSchema(
+#                     id=message.file.id,
+#                     file_name=message.file.filename,
+#                     file_path=message.file.filepath
+#                 )
+#             message_data = MessageSchema(
+#                 id=message.id,
+#                 text=message.text,
+#                 is_manager_message=message.is_manager_message,
+#                 time=message.timestamp,
+#                 file = file_data
+#             )
+#             messages_response.append(message_data)
+#         lead = LeadSchema(
+#             id=lead.id,
+#             manager_id = lead.manager_id,
+#             full_name=lead.full_name,
+#             phone_number=lead.phone_number,
+#             email=lead.email,
+#             language=lead.language,
+#             source=lead.source,
+#             created_at=lead.created_at,
+#             status=lead.status,
+#             last_update=lead.last_manager_update,
+#             description=lead.description,
+#             chat = messages_response
+#         )
+#         response.append(lead)
+#     return response
 
 @router.get('/user/{user_id}', name='get any user by id', response_model = UserSchema)
 async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -138,6 +138,7 @@ async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), d
             messages_response.append(message_data)
         client_data = ClientSchema(
             id=client.id,
+            manager_id = client.manager_id,
             full_name=client.full_name,
             phone_number=client.phone_number,
             email=client.email,
