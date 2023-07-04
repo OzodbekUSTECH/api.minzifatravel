@@ -69,41 +69,21 @@ async def get_all_leads(date_from: date = None, date_to: date = None, page: int 
         response.append(lead_data)
     return response
 
-@router.get('/chats/', name="get all chats by a range of date and page", response_model=list[LeadSchema])
-async def get_all_leads(page: int = 1, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+@router.get('/{manager_id}/chat/{lead_id}', name="get all chats by a range of date and page", response_model=list[MessageSchema])
+async def get_all_leads(manager_id: int, lead_id: int, page: int = 1, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.department != "Отдел управления":
         raise HTTPException(status_code=403, detail="Недостаточно прав доступа.")
 
-    if date_from is None:
-        date_from = datetime.combine(date.today(), datetime.min.time())
-    if date_to is None:
-        date_to = datetime.combine(date.today(), datetime.max.time())
-
-
-    all_leads = db.query(models.Lead).filter(models.Lead.created_at.between(date_from, date_to)).order_by(models.Lead.id).all()
+    chat = db.query(models.Message).filter(models.Message.manager_id == manager_id, models.Message.lead_id == lead_id).order_by('id').all()
 
     leads_per_page = 100
     start_index = (page - 1) * leads_per_page
     end_index = start_index + leads_per_page
-    paginated_leads = all_leads[start_index:end_index]
+    paginated_chat = chat[start_index:end_index]
 
     response = []
-    for lead in paginated_leads:
-        lead_data = LeadSchema(
-            id=lead.id,
-            manager_id=lead.manager_id,
-            full_name=lead.full_name,
-            phone_number=lead.phone_number,
-            email=lead.email,
-            language=lead.language,
-            source=lead.source,
-            created_at=lead.created_at,
-            status=lead.status,
-            last_update=lead.last_manager_update,
-            description=lead.description,
-        )
-        response.append(lead_data)
-    return response
+   
+    return paginated_chat
 
 @router.get('/user/{user_id}', name='get any user by id', response_model = UserSchema)
 async def get_user_by_id(user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):

@@ -28,56 +28,7 @@ router = APIRouter(
 @router.get('/me', name="get own data", response_model=UserSchema)
 async def get_all_staff(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
 
-    
-
-    clients_response = []
-    for client in current_user.clients:
-        chat_response = []
-        for message in client.messages:
-            file_data = None
-            if message.file:
-                file_data = FileSchema(
-                    id=message.file.id,
-                    file_name=message.file.filename,
-                    file_path=message.file.filepath
-                )
-            chat_data = MessageSchema(
-                id=message.id,
-                text=message.text,
-                is_manager_message=message.is_manager_message,
-                time = message.timestamp,
-                file = file_data
-            )
-            chat_response.append(chat_data)
-        client_data = ClientSchema(
-            id = client.id,
-            full_name=client.full_name,
-            phone_number=client.phone_number,
-            email = client.email,
-            language=client.language,
-            source=client.source,
-            created_at=client.created_at,
-            status=client.status,
-            last_update=client.last_manager_update,
-            description=client.description,
-            chat= chat_response
-        )
-        clients_response.append(client_data)
-
-    response = UserSchema(
-        id=current_user.id,
-        avatar=current_user.avatar,
-        full_name=current_user.full_name,
-        email=current_user.email,
-        department=current_user.department,
-        role=current_user.role,
-        language=current_user.language,
-        is_busy=current_user.is_busy,
-        amount_finished_clients=current_user.amount_finished_clients,
-        clients = clients_response
-    )
-
-    return response
+    return current_user
 
 
 

@@ -54,7 +54,7 @@ class MessageSchema(BaseModel):
     lead_id: int
     text: str = None
     is_manager_message: bool
-    time: datetime
+    timestamp: datetime
     file: FileSchema = None
 
     class Config:
