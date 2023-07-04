@@ -45,7 +45,7 @@ async def get_own_clients(current_user= Depends(get_current_user), db: Session =
             )
             messages_response.append(message_data)
         client_data = ClientSchema(
-           id=client.id,
+            id=client.id,
             full_name=client.full_name,
             phone_number=client.phone_number,
             email=client.email,
@@ -60,6 +60,8 @@ async def get_own_clients(current_user= Depends(get_current_user), db: Session =
         response.append(client_data)
 
     return response
+
+
 
 @router.post('/lead', response_model = ClientSchema)
 async def create_lead(lead: CreateClientSchema, current_user=Depends(get_current_user), db: Session = Depends(get_db)):

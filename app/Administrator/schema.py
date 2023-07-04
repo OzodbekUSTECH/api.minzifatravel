@@ -45,6 +45,8 @@ class FileSchema(BaseModel):
     file_name: str
     file_path: str
 
+    class Config:
+        orm_mode = True
 
 class MessageSchema(BaseModel):
     id: int
@@ -58,11 +60,12 @@ class MessageSchema(BaseModel):
 
 class ClientSchema(BaseModel):
     id: int
+    manager_id: Optional[int]
     full_name: str
     phone_number: Optional[str]
     email: Optional[str]
     language: str
-    source: str
+    source: Optional[str]
     created_at: Optional[datetime]
     status: str
     last_update: Optional[datetime]
@@ -140,3 +143,20 @@ class UpdateTaskSchema(BaseModel):
 
 
 #######################################
+
+class LeadSchema(BaseModel):
+    id: int
+    manager_id: Optional[int]
+    full_name: str
+    phone_number: Optional[str]
+    email: Optional[str]
+    language: str
+    source: Optional[str]
+    created_at: Optional[datetime]
+    status: str
+    last_update: Optional[datetime]
+    description: str = None
+    chat: Optional[List[MessageSchema]]
+
+    class Config:
+        orm_mode = True
